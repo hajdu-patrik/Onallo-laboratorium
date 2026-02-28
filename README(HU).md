@@ -1,15 +1,15 @@
+# AutoService - Időpontfoglaló és Erőforrás-kezelő Rendszer
+
 ![.NET](https://img.shields.io/badge/Backend-.NET_10-512BD4?style=flat&logo=dotnet&logoColor=white)
 ![C#](https://img.shields.io/badge/Language-C%23_15-239120?style=flat&logo=csharp&logoColor=white)
 ![React](https://img.shields.io/badge/Frontend-React_19-61DAFB?style=flat&logo=react&logoColor=black)
 ![TypeScript](https://img.shields.io/badge/Language-TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)
 ![Vite](https://img.shields.io/badge/Bundler-Vite-646CFF?style=flat&logo=vite&logoColor=white)
-![SQL Server](https://img.shields.io/badge/Database-SQL_Server_2022-CC292B?style=flat&logo=microsoftsqlserver&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL-4169E1?style=flat&logo=postgresql&logoColor=white)
 ![Aspire](https://img.shields.io/badge/Orchestration-.NET_Aspire-512BD4?style=flat&logo=dotnet&logoColor=white)
 ![EF Core](https://img.shields.io/badge/ORM-EF_Core-512BD4?style=flat&logo=nuget&logoColor=white)
 
-# AutoService - Időpontfoglaló és Erőforrás-kezelő Rendszer
-
-Az AutoService egy full-stack alkalmazás, amely ASP.NET Core Web API-t használ backendként, React + TypeScript-et frontendként, valamint Microsoft SQL Server 2022-t adatbázisként. A rendszer egy .NET Aspire orkesztrációs rétegen fut, ami egyszerűsíti a helyi fejlesztést, az observability-t és a konténeres működést.
+Az AutoService egy full-stack alkalmazás, amely ASP.NET Core Web API-t használ backendként, React + TypeScript-et frontendként, valamint PostgreSQL-t adatbázisként. A rendszer egy .NET Aspire orkesztrációs rétegen fut, ami egyszerűsíti a helyi fejlesztést, az observability-t és a konténeres működést.
 
 ---
 
@@ -37,7 +37,7 @@ dotnet new aspire-apphost -n AutoService.AppHost
 dotnet new aspire-servicedefaults -n AutoService.ServiceDefaults
 ```
 
-Az `AppHost` az orkesztrátor. Indításkor ez fut el először, majd elindítja az infrastruktúrát (például SQL Server Docker konténert) és az API-t.
+Az `AppHost` az orkesztrátor. Indításkor ez fut el először, majd elindítja az infrastruktúrát (például PostgreSQL Docker konténert) és az API-t.
 
 A `ServiceDefaults` egy megosztott könyvtár az OpenTelemetry (logok, metrikák, trace-ek) és a health check beállításokhoz.
 
@@ -110,16 +110,16 @@ Az API megkapja a közös telemetria beállításokat, az AppHost pedig tudja in
 ### 2) Aspire integrációs csomagok (AppHost)
 
 ```Bash
-dotnet add AutoService.AppHost package Aspire.Hosting.SqlServer
+dotnet add AutoService.AppHost package Aspire.Hosting.PostgreSQL
 dotnet add AutoService.AppHost package Aspire.Hosting.NodeJs
 ```
 
-Ezek teszik lehetővé, hogy az orkesztrátor SQL Server-t indítson Dockerben, és Node.js-alapú frontend folyamatokat kezeljen.
+Ezek teszik lehetővé, hogy az orkesztrátor PostgreSQL-t indítson Dockerben, és Node.js-alapú frontend folyamatokat kezeljen.
 
 ### 3) Entity Framework Core csomagok (ApiService)
 
 ```Bash
-dotnet add AutoService.ApiService package Microsoft.EntityFrameworkCore.SqlServer
+dotnet add AutoService.ApiService package Npgsql.EntityFrameworkCore.PostgreSQL
 dotnet add AutoService.ApiService package Microsoft.EntityFrameworkCore.Design
 dotnet add AutoService.ApiService package Microsoft.EntityFrameworkCore.Tools
 ```

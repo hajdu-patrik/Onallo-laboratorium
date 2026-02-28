@@ -1,15 +1,15 @@
+# AutoService - Appointment and Resource Management System
+
 ![.NET](https://img.shields.io/badge/Backend-.NET_10-512BD4?style=flat&logo=dotnet&logoColor=white)
 ![C#](https://img.shields.io/badge/Language-C%23_15-239120?style=flat&logo=csharp&logoColor=white)
 ![React](https://img.shields.io/badge/Frontend-React_19-61DAFB?style=flat&logo=react&logoColor=black)
 ![TypeScript](https://img.shields.io/badge/Language-TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)
 ![Vite](https://img.shields.io/badge/Bundler-Vite-646CFF?style=flat&logo=vite&logoColor=white)
-![SQL Server](https://img.shields.io/badge/Database-SQL_Server_2022-CC292B?style=flat&logo=microsoftsqlserver&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL-4169E1?style=flat&logo=postgresql&logoColor=white)
 ![Aspire](https://img.shields.io/badge/Orchestration-.NET_Aspire-512BD4?style=flat&logo=dotnet&logoColor=white)
 ![EF Core](https://img.shields.io/badge/ORM-EF_Core-512BD4?style=flat&logo=nuget&logoColor=white)
 
-# AutoService - Appointment and Resource Management System
-
-AutoService is a full-stack application using ASP.NET Core Web API for the backend, React + TypeScript for the frontend, and Microsoft SQL Server 2022 as the database. The system runs on a .NET Aspire orchestration layer to simplify local development, observability, and container-based workflows.
+AutoService is a full-stack application using ASP.NET Core Web API for the backend, React + TypeScript for the frontend, and PostgreSQL as the database. The system runs on a .NET Aspire orchestration layer to simplify local development, observability, and container-based workflows.
 
 ---
 
@@ -37,7 +37,7 @@ dotnet new aspire-apphost -n AutoService.AppHost
 dotnet new aspire-servicedefaults -n AutoService.ServiceDefaults
 ```
 
-`AppHost` is the orchestrator. It starts first, then starts infrastructure (for example SQL Server in Docker) and the API.
+`AppHost` is the orchestrator. It starts first, then starts infrastructure (for example PostgreSQL in Docker) and the API.
 
 `ServiceDefaults` is a shared library for OpenTelemetry (logs, metrics, traces) and health checks.
 
@@ -110,16 +110,16 @@ The API receives shared telemetry defaults, and AppHost is able to start ApiServ
 ### 2) Aspire integration packages (AppHost)
 
 ```Bash
-dotnet add AutoService.AppHost package Aspire.Hosting.SqlServer
+dotnet add AutoService.AppHost package Aspire.Hosting.PostgreSQL
 dotnet add AutoService.AppHost package Aspire.Hosting.NodeJs
 ```
 
-These enable orchestrating SQL Server in Docker and starting the React app via Node.js.
+These enable orchestrating PostgreSQL in Docker and starting the React app via Node.js.
 
 ### 3) Entity Framework Core packages (ApiService)
 
 ```Bash
-dotnet add AutoService.ApiService package Microsoft.EntityFrameworkCore.SqlServer
+dotnet add AutoService.ApiService package Npgsql.EntityFrameworkCore.PostgreSQL
 dotnet add AutoService.ApiService package Microsoft.EntityFrameworkCore.Design
 dotnet add AutoService.ApiService package Microsoft.EntityFrameworkCore.Tools
 ```

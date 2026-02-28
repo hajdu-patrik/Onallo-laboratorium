@@ -70,8 +70,9 @@ packages/
 
 *.local
 
-# ASP.NET local development settings (may contain local secrets)
+# ASP.NET local development settings
 **/appsettings.Development.json
+**/appsettings.Local.json
 
 # User Secrets / certificates / keys
 secrets.json
