@@ -9,7 +9,7 @@
 
 # AutoService - Időpontfoglaló és Erőforrás-kezelő Rendszer
 
-Az AutoService egy teljes stack alkalmazás, amely ASP.NET Core Web API-t használ backendként, React + TypeScript-et frontendként, valamint Microsoft SQL Server 2022-t adatbázisként. A rendszer egy .NET Aspire orkesztrációs rétegen fut, ami egyszerűsíti a helyi fejlesztést, az observability-t és a konténeres működést.
+Az AutoService egy full-stack alkalmazás, amely ASP.NET Core Web API-t használ backendként, React + TypeScript-et frontendként, valamint Microsoft SQL Server 2022-t adatbázisként. A rendszer egy .NET Aspire orkesztrációs rétegen fut, ami egyszerűsíti a helyi fejlesztést, az observability-t és a konténeres működést.
 
 ---
 
