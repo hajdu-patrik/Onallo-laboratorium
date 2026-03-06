@@ -1,12 +1,19 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
+var postgresPassword = builder.AddParameter("postgres-password", secret: true);
+
 // Database definition (PostgreSQL)
-var postgres = builder.AddPostgres("postgres")
-                      .AddDatabase("AutoServiceDb");
+var postgresServer = builder.AddPostgres("postgres", password: postgresPassword)
+                            .WithHostPort(55432)
+                            .WithDataVolume("autoservice-postgres-data")
+                            .WithLifetime(Aspire.Hosting.ApplicationModel.ContainerLifetime.Persistent);
+
+var postgresDb = postgresServer.AddDatabase("AutoServiceDb");
 
 // Backend (ASP.NET Core) definition and reference to PostgreSQL
 var apiService = builder.AddProject<Projects.AutoService_ApiService>("apiservice")
-                        .WithReference(postgres);
+                        .WithReference(postgresDb)
+                        .WaitFor(postgresDb);
 
 // Frontend (React) setting up and reference to API
 var webUi = builder.AddNpmApp("webui", "../AutoService.WebUI", "dev")

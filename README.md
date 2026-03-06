@@ -131,6 +131,7 @@ These install the official Microsoft ORM and migration tooling. The project uses
 ## Run with Aspire
 
 ```Bash
+cd AutoServiceApp
 cd AutoService.AppHost
 dotnet run
 ```

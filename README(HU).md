@@ -131,6 +131,7 @@ Ezek telepítik a Microsoft hivatalos ORM-jét és a migrációkhoz szükséges 
 ## Indítás Aspire-rel
 
 ```Bash
+cd AutoServiceApp
 cd AutoService.AppHost
 dotnet run
 ```

@@ -32,7 +32,7 @@ public sealed class AutoServiceDbContext(DbContextOptions<AutoServiceDbContext> 
         // Shared People mapping (base for Customer and Mechanic).
         modelBuilder.Entity<People>(entity =>
         {
-            entity.ToTable("People");
+            entity.ToTable("people");
             entity.HasDiscriminator<string>("PersonType")
                 .HasValue<Customer>("Customer")
                 .HasValue<Mechanic>("Mechanic");
@@ -94,7 +94,7 @@ public sealed class AutoServiceDbContext(DbContextOptions<AutoServiceDbContext> 
         // Vehicle mapping.
         modelBuilder.Entity<Vehicle>(entity =>
         {
-            entity.ToTable(table =>
+            entity.ToTable("vehicles", table =>
             {
                 table.HasCheckConstraint("CK_Vehicles_Year", "\"Year\" >= 1886 AND \"Year\" <= 2100");
                 table.HasCheckConstraint("CK_Vehicles_MileageKm", "\"MileageKm\" >= 0");
@@ -121,6 +121,8 @@ public sealed class AutoServiceDbContext(DbContextOptions<AutoServiceDbContext> 
         // Appointment mapping.
         modelBuilder.Entity<Appointment>(entity =>
         {
+            entity.ToTable("appointments");
+
             entity.Property(x => x.ScheduledDate).IsRequired();
             entity.Property(x => x.TaskDescription).HasMaxLength(200).IsRequired();
             entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
@@ -130,12 +132,12 @@ public sealed class AutoServiceDbContext(DbContextOptions<AutoServiceDbContext> 
             entity.HasMany(x => x.Mechanics)
                 .WithMany(x => x.Appointments)
                 .UsingEntity<Dictionary<string, object>>(
-                    "AppointmentMechanics",
+                    "appointmentmechanics",
                     j => j.HasOne<Mechanic>().WithMany().HasForeignKey("MechanicId").OnDelete(DeleteBehavior.Cascade),
                     j => j.HasOne<Appointment>().WithMany().HasForeignKey("AppointmentId").OnDelete(DeleteBehavior.Cascade),
                     j =>
                     {
-                        j.ToTable("AppointmentMechanics");
+                        j.ToTable("appointmentmechanics");
                         j.HasKey("AppointmentId", "MechanicId");
                     });
         });
