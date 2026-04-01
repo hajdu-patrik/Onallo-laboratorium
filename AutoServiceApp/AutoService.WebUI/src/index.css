@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+@custom-variant dark (&:where(.dark, .dark *));
 /* stylelint-disable-next-line at-rule-no-unknown */
 @tailwind base;
 /* stylelint-disable-next-line at-rule-no-unknown */

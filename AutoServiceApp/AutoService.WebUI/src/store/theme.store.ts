@@ -35,9 +35,11 @@ export const useThemeStore = create<ThemeState>((set) => ({
   },
 
   loadTheme: () => {
-    const savedTheme = localStorage.getItem('preferred-theme') as Theme | null;
-    const prefersDark = (globalThis?.matchMedia?.('(prefers-color-scheme: dark)').matches) ?? false;
-    const theme = savedTheme ?? (prefersDark ? 'dark' : 'light');
+    const savedTheme = localStorage.getItem('preferred-theme');
+    const theme: Theme = savedTheme === 'dark' || savedTheme === 'light'
+      ? savedTheme
+      : 'light';
+
     applyThemeToDocument(theme);
     set({ theme });
   },

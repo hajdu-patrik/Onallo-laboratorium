@@ -12,16 +12,118 @@ interface ApiErrorPayload {
   readonly detail?: string;
   readonly message?: string;
   readonly error?: string;
+  readonly retryAfterSeconds?: number;
 }
 
-type LoginErrorKey =
-  | 'login.passwordIncorrect'
-  | 'login.identifierNotFound'
-  | 'login.serverError500'
-  | 'login.databaseUnavailable'
-  | 'login.error';
+type LoginError =
+  | { key: 'login.invalidCredentials' }
+  | { key: 'login.identifierNotFound' }
+  | { key: 'login.serverError500' }
+  | { key: 'login.databaseUnavailable' }
+  | { key: 'login.attemptsExceededWithDuration'; minutes: number }
+  | { key: 'login.attemptsExceeded' }
+  | { key: 'login.error' };
 
-function resolveLoginErrorKey(err: unknown): LoginErrorKey {
+type ParsedIdentifier =
+  | { kind: 'email'; email: string }
+  | { kind: 'phone'; phoneNumber: string }
+  | { kind: 'invalid' };
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function parseIdentifier(value: string): ParsedIdentifier {
+  const trimmedValue = value.trim();
+
+  if (!trimmedValue) {
+    return { kind: 'invalid' };
+  }
+
+  if (trimmedValue.includes('@')) {
+    if (!EMAIL_REGEX.test(trimmedValue)) {
+      return { kind: 'invalid' };
+    }
+
+    return {
+      kind: 'email',
+      email: trimmedValue,
+    };
+  }
+
+  const compactValue = trimmedValue.replaceAll(/[\s\-()]/g, '');
+
+  if (!compactValue) {
+    return { kind: 'invalid' };
+  }
+
+  let normalizedValue = compactValue;
+
+  if (normalizedValue.startsWith('00')) {
+    normalizedValue = `+${normalizedValue.slice(2)}`;
+  }
+
+  if (normalizedValue.startsWith('06')) {
+    normalizedValue = `+36${normalizedValue.slice(2)}`;
+  } else if (normalizedValue.startsWith('36')) {
+    normalizedValue = `+${normalizedValue}`;
+  }
+
+  if (!normalizedValue.startsWith('+36')) {
+    return { kind: 'invalid' };
+  }
+
+  const nationalDigits = normalizedValue.slice(3);
+  const hasOnlyDigits = /^\d+$/.test(nationalDigits);
+
+  if (!hasOnlyDigits || nationalDigits.length !== 9) {
+    return { kind: 'invalid' };
+  }
+
+  return {
+    kind: 'phone',
+    phoneNumber: `+36${nationalDigits}`,
+  };
+}
+
+function parseRetryAfterSeconds(err: AxiosError<ApiErrorPayload>): number | null {
+  const payloadRetryAfter = err.response?.data?.retryAfterSeconds;
+  if (typeof payloadRetryAfter === 'number' && Number.isFinite(payloadRetryAfter) && payloadRetryAfter > 0) {
+    return Math.floor(payloadRetryAfter);
+  }
+
+  const retryAfterHeader = err.response?.headers?.['retry-after'];
+
+  if (typeof retryAfterHeader === 'string') {
+    const parsedSeconds = Number.parseInt(retryAfterHeader, 10);
+    if (!Number.isNaN(parsedSeconds) && parsedSeconds > 0) {
+      return parsedSeconds;
+    }
+
+    const parsedDate = Date.parse(retryAfterHeader);
+    if (!Number.isNaN(parsedDate)) {
+      const deltaSeconds = Math.ceil((parsedDate - Date.now()) / 1000);
+      if (deltaSeconds > 0) {
+        return deltaSeconds;
+      }
+    }
+  }
+
+  return null;
+}
+
+function toAttemptsExceededError(retryAfterSeconds: number | null): LoginError {
+  if (retryAfterSeconds === null) {
+    return { key: 'login.attemptsExceeded' };
+  }
+
+  const minutes = Math.max(1, Math.ceil(retryAfterSeconds / 60));
+
+  return {
+    key: 'login.attemptsExceededWithDuration',
+    minutes,
+  };
+}
+
+function resolveLoginError(err: unknown): LoginError {
   const axiosError = err as AxiosError<ApiErrorPayload>;
   const status = axiosError?.response?.status;
   const responseData = axiosError?.response?.data;
@@ -38,8 +140,17 @@ function resolveLoginErrorKey(err: unknown): LoginErrorKey {
     .join(' ')
     .toLowerCase();
 
+  if (
+    status === 429 ||
+    normalizedErrorText.includes('lockout') ||
+    normalizedErrorText.includes('too many attempts') ||
+    normalizedErrorText.includes('rate limit')
+  ) {
+    return toAttemptsExceededError(parseRetryAfterSeconds(axiosError));
+  }
+
   if (status === 500 || normalizedErrorText.includes('500')) {
-    return 'login.serverError500';
+    return { key: 'login.serverError500' };
   }
 
   if (
@@ -52,7 +163,7 @@ function resolveLoginErrorKey(err: unknown): LoginErrorKey {
     normalizedErrorText.includes('network error') ||
     normalizedErrorText.includes('failed to fetch')
   ) {
-    return 'login.databaseUnavailable';
+    return { key: 'login.databaseUnavailable' };
   }
 
   if (
@@ -61,23 +172,21 @@ function resolveLoginErrorKey(err: unknown): LoginErrorKey {
     normalizedErrorText.includes('does not exist') ||
     normalizedErrorText.includes('not found')
   ) {
-    return 'login.identifierNotFound';
+    return { key: 'login.identifierNotFound' };
   }
 
   if (status === 401) {
-    return 'login.passwordIncorrect';
+    return { key: 'login.invalidCredentials' };
   }
 
-  return 'login.error';
+  return { key: 'login.error' };
 }
 
 const LoginComponent = memo(function Login() {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const [email, setEmail] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
-  const [identifier, setIdentifier] = useState<'email' | 'phone'>('email');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -86,121 +195,79 @@ const LoginComponent = memo(function Login() {
   const handleSubmit = useCallback(async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
+
+    const parsedIdentifier = parseIdentifier(identifier);
+
+    if (parsedIdentifier.kind === 'invalid') {
+      const formatError = t('login.invalidFormat');
+      setError(formatError);
+      setAuthError(formatError);
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       const loginRequest = {
-        email: identifier === 'email' ? email : undefined,
-        phoneNumber: identifier === 'phone' ? phoneNumber : undefined,
+        email: parsedIdentifier.kind === 'email' ? parsedIdentifier.email : undefined,
+        phoneNumber: parsedIdentifier.kind === 'phone' ? parsedIdentifier.phoneNumber : undefined,
         password,
       };
 
       await authService.login(loginRequest);
-
-      // Successful login - redirect to dashboard
       navigate('/');
     } catch (err) {
-      const errorMessage = t(resolveLoginErrorKey(err));
+      const resolvedError = resolveLoginError(err);
+      const errorMessage = resolvedError.key === 'login.attemptsExceededWithDuration'
+        ? t(resolvedError.key, { minutes: resolvedError.minutes })
+        : t(resolvedError.key);
+
       setError(errorMessage);
       setAuthError(errorMessage);
     } finally {
-      // Clear sensitive field from UI state after every submit attempt.
       setPassword('');
       setIsLoading(false);
     }
-  }, [identifier, email, phoneNumber, password, navigate, t, setAuthError]);
+  }, [identifier, password, navigate, t, setAuthError]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-purple-100 dark:from-slate-900 dark:to-slate-800 p-4">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#ECECEF] px-3 pb-3 pt-16 text-[#2C2440] dark:bg-[#09090F] dark:text-[#EDE8FA] sm:p-4 sm:pt-4">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute left-1/2 top-1/2 z-0 h-[120vmax] w-[120vmax] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,_rgba(201,179,255,0.58)_0%,_rgba(201,179,255,0.26)_32%,_rgba(201,179,255,0.1)_48%,_rgba(201,179,255,0)_72%)] dark:bg-[radial-gradient(circle,_rgba(122,102,199,0.7)_0%,_rgba(122,102,199,0.34)_34%,_rgba(122,102,199,0.14)_50%,_rgba(122,102,199,0)_72%)]"
+      />
+
       <ThemeLanguageControls />
-      <div className="w-full max-w-md">
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 border border-purple-100 dark:border-slate-700">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-              AutoService
+
+      <div className="relative z-10 w-full max-w-md">
+        <div className="rounded-2xl border border-[#D8D2E9] bg-white p-4 shadow-[0_12px_34px_rgba(44,36,64,0.14)] dark:border-[#2C2440] dark:bg-[#13131B] dark:shadow-[0_16px_36px_rgba(0,0,0,0.45)] sm:p-8">
+          <div className="relative mb-5 text-center sm:mb-7">
+            <h1 className="text-[clamp(1.5rem,5.5vw,2.05rem)] font-semibold leading-tight text-[#2C2440] dark:text-[#EDE8FA]">
+              {t('login.title')}
             </h1>
-            <p className="text-slate-600 dark:text-slate-400">{t('login.subtitle')}</p>
+            <p className="mt-2 text-sm text-[#6A627F] dark:text-[#B9B0D3]">{t('login.subtitle')}</p>
           </div>
 
-          {/* Error Message */}
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-              <p className="text-red-800 dark:text-red-200 text-sm font-medium">{error}</p>
-            </div>
-          )}
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Identifier Toggle */}
-            <div className="flex gap-2 mb-6 p-1 bg-slate-100 dark:bg-slate-700 rounded-lg">
-              <button
-                type="button"
-                onClick={() => setIdentifier('email')}
-                className={`flex-1 py-2 rounded-md transition-all font-medium text-sm ${
-                  identifier === 'email'
-                    ? 'bg-purple-500 text-white shadow-md'
-                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
-                }`}
-              >
-                {t('login.email')}
-              </button>
-              <button
-                type="button"
-                onClick={() => setIdentifier('phone')}
-                className={`flex-1 py-2 rounded-md transition-all font-medium text-sm ${
-                  identifier === 'phone'
-                    ? 'bg-purple-500 text-white shadow-md'
-                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
-                }`}
-              >
-                {t('login.phone')}
-              </button>
-            </div>
-
-            {/* Email Input */}
-            {identifier === 'email' && (
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">
-                  {t('login.email')}
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="mechanic@example.com"
-                  className="w-full px-4 py-3 rounded-lg border border-purple-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
-                  required
-                  disabled={isLoading}
-                />
-              </div>
-            )}
-
-            {/* Phone Input */}
-            {identifier === 'phone' && (
-              <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">
-                  {t('login.phone')}
-                </label>
-                <input
-                  id="phone"
-                  type="tel"
-                  autoComplete="tel"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  placeholder="+36 30 123 4567"
-                  className="w-full px-4 py-3 rounded-lg border border-purple-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
-                  required
-                  disabled={isLoading}
-                />
-              </div>
-            )}
-
-            {/* Password Input */}
+          <form onSubmit={handleSubmit} className="space-y-3.5 sm:space-y-4">
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">
+              <label htmlFor="identifier" className="mb-2 block text-sm font-medium text-[#5E5672] dark:text-[#CFC5EA]">
+                {t('login.identifierLabel')}
+              </label>
+              <input
+                id="identifier"
+                type="text"
+                autoComplete="username"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                placeholder={t('login.identifierPlaceholder')}
+                className="w-full rounded-xl border border-[#D8D2E9] bg-[#F6F4FB] px-3.5 py-2.5 text-[14px] text-[#2C2440] placeholder-[#8A829F] outline-none transition focus:border-[#C9B3FF] focus:ring-2 focus:ring-[#C9B3FF66] dark:border-[#3A3154] dark:bg-[#1A1A25] dark:text-[#EDE8FA] dark:placeholder-[#8C83A8] dark:focus:border-[#C9B3FF] dark:focus:ring-[#C9B3FF3D] sm:px-4 sm:py-3 sm:text-[15px]"
+                required
+                disabled={isLoading}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="password" className="mb-2 block text-sm font-medium text-[#5E5672] dark:text-[#CFC5EA]">
                 {t('login.password')}
               </label>
               <input
@@ -209,26 +276,28 @@ const LoginComponent = memo(function Login() {
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full px-4 py-3 rounded-lg border border-purple-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                placeholder={t('login.password')}
+                className="w-full rounded-xl border border-[#D8D2E9] bg-[#F6F4FB] px-3.5 py-2.5 text-[14px] text-[#2C2440] placeholder-[#8A829F] outline-none transition focus:border-[#C9B3FF] focus:ring-2 focus:ring-[#C9B3FF66] dark:border-[#3A3154] dark:bg-[#1A1A25] dark:text-[#EDE8FA] dark:placeholder-[#8C83A8] dark:focus:border-[#C9B3FF] dark:focus:ring-[#C9B3FF3D] sm:px-4 sm:py-3 sm:text-[15px]"
                 required
                 disabled={isLoading}
               />
             </div>
 
-            {/* Submit Button */}
+            {error && (
+              <p className="text-sm font-medium text-[#E25B63] dark:text-[#FF7A80]">{error}</p>
+            )}
+
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 bg-purple-500 hover:bg-purple-600 disabled:bg-purple-300 dark:disabled:bg-purple-900 text-white font-bold rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl disabled:cursor-not-allowed mt-6"
+              className="mt-1.5 w-full rounded-xl bg-[#C9B3FF] py-2.5 text-sm font-semibold text-[#2C2440] shadow-[0_8px_20px_rgba(111,84,173,0.28)] transition hover:bg-[#BFA6F7] disabled:cursor-not-allowed disabled:bg-[#DCCDFA] dark:bg-[#7A66C7] dark:text-[#F5F2FF] dark:hover:bg-[#8A75D6] dark:disabled:bg-[#4B406E] sm:mt-2 sm:py-3 sm:text-base"
             >
               {isLoading ? t('login.loading') : t('login.submit')}
             </button>
           </form>
 
-          {/* Info Text */}
-          <p className="text-center text-sm text-slate-600 dark:text-slate-400 mt-6">
-            {t('login.mechanicOnly')}
+          <p className="mt-4 text-xs text-[#6A627F] dark:text-[#B9B0D3] sm:mt-5 sm:text-sm">
+            {t('login.helpText')}
           </p>
         </div>
       </div>

@@ -46,22 +46,31 @@ const NotFoundComponent = memo(function NotFound() {
 
   return (
     <div
-      className={`min-h-screen ${isDark ? 'bg-[#09090F] text-[#EDE8FA]' : 'bg-[#ECECEF] text-[#2C2440]'}`}
+      className={`relative min-h-screen overflow-hidden ${isDark ? 'bg-[#09090F] text-[#EDE8FA]' : 'bg-[#ECECEF] text-[#2C2440]'}`}
     >
+      <div
+        aria-hidden="true"
+        className={`pointer-events-none absolute left-1/2 top-1/2 z-0 h-[120vmax] w-[120vmax] -translate-x-1/2 -translate-y-1/2 rounded-full ${
+          isDark
+            ? 'bg-[radial-gradient(circle,_rgba(122,102,199,0.68)_0%,_rgba(122,102,199,0.32)_34%,_rgba(122,102,199,0.13)_50%,_rgba(122,102,199,0)_72%)]'
+            : 'bg-[radial-gradient(circle,_rgba(201,179,255,0.56)_0%,_rgba(201,179,255,0.24)_34%,_rgba(201,179,255,0.1)_50%,_rgba(201,179,255,0)_72%)]'
+        }`}
+      />
+
       <ThemeLanguageControls />
 
-      <main className="mx-auto flex min-h-screen w-full max-w-[1920px] items-center justify-center px-6">
-        <section className="text-center">
-          <h1 className="text-[clamp(112px,11vw,176px)] font-semibold leading-none tracking-tight">
+      <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1920px] items-center justify-center px-3 pt-16 sm:px-6 sm:pt-0">
+        <section className="relative text-center">
+          <h1 className="text-[clamp(88px,22vw,176px)] font-semibold leading-none tracking-tight">
             404
           </h1>
 
-          <p className="mt-4 text-[clamp(34px,2.2vw,44px)] font-medium leading-tight">
+          <p className="mt-3 text-[clamp(24px,8vw,44px)] font-medium leading-tight sm:mt-4">
             {t('notFound.pageNotFound')}
           </p>
 
           <p
-            className={`mt-4 text-[clamp(16px,1.05vw,20px)] ${
+            className={`mx-auto mt-3 max-w-[22rem] text-[clamp(14px,4.5vw,20px)] ${
               isDark ? 'text-[#B9B0D3]' : 'text-[#6A627F]'
             }`}
           >
@@ -69,15 +78,26 @@ const NotFoundComponent = memo(function NotFound() {
           </p>
 
           <div
-            className="mx-auto mt-3 h-2 w-[300px] overflow-hidden rounded-full"
-            style={{ backgroundColor: isDark ? '#2C2440' : '#D8D2E9' }}
+            className="mx-auto mt-3 h-2.5 w-[min(300px,86vw)] overflow-hidden rounded-full border"
+            style={{
+              backgroundColor: isDark ? '#1B1630' : '#CFC4EB',
+              borderColor: isDark ? '#5A4A87' : '#9A84CB',
+              boxShadow: isDark
+                ? 'inset 0 0 0 1px rgba(237,232,250,0.08)'
+                : 'inset 0 0 0 1px rgba(44,36,64,0.08)',
+            }}
             aria-hidden="true"
           >
             <div
               className="h-full rounded-full"
               style={{
                 width: `${progress}%`,
-                backgroundColor: '#C9B3FF',
+                background: isDark
+                  ? 'linear-gradient(90deg, #D8C8FF 0%, #9A83E3 100%)'
+                  : 'linear-gradient(90deg, #7A66C7 0%, #B89BFF 100%)',
+                boxShadow: isDark
+                  ? '0 0 10px rgba(184,155,255,0.45)'
+                  : '0 0 8px rgba(122,102,199,0.35)',
                 transition: `width ${TIMER_TICK_MS}ms linear`,
               }}
             />

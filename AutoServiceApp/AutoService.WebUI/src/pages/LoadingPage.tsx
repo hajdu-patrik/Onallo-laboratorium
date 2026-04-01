@@ -18,7 +18,7 @@ const LoadingPageComponent = memo(function LoadingPage() {
     const timer = setTimeout(() => {
       localStorage.setItem(LOADING_PAGE_SEEN_KEY, 'true');
       setIsVisible(false);
-    }, 2500);
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, [isVisible]);
@@ -53,7 +53,7 @@ const LoadingPageComponent = memo(function LoadingPage() {
 
         @keyframes shape-bottom-right-in {
           0% { transform: translate(calc(50vw), calc(60vh)) rotate(-8deg); opacity: 0; }
-          100% { transform: translate(calc(-25vw), calc(0vh)) rotate(-8deg); opacity: 1; }
+          100% { transform: translate(calc(10vw), calc(15vh)) rotate(-8deg); opacity: 1; }
         }
 
         @keyframes shape-top-right-in {
@@ -93,7 +93,7 @@ const LoadingPageComponent = memo(function LoadingPage() {
         <div
           className="shape-base shape-bottom-right"
           style={{ 
-            width: '72.92vw',
+            width: 'min(72.92vw, 920px)',
             aspectRatio: '1400 / 430',
             backgroundColor: rectangleColors[0] 
           }}
@@ -101,7 +101,7 @@ const LoadingPageComponent = memo(function LoadingPage() {
         <div
           className="shape-base shape-left"
           style={{ 
-            width: '51.04vw',
+            width: 'min(51.04vw, 700px)',
             aspectRatio: '980 / 380',
             backgroundColor: rectangleColors[1] 
           }}
@@ -109,7 +109,7 @@ const LoadingPageComponent = memo(function LoadingPage() {
         <div
           className="shape-base shape-top-right"
           style={{ 
-            width: '42.71vw',
+            width: 'min(42.71vw, 620px)',
             aspectRatio: '820 / 360',
             backgroundColor: rectangleColors[2] 
           }}
@@ -120,8 +120,8 @@ const LoadingPageComponent = memo(function LoadingPage() {
         <div
           className="relative z-10 flex items-center justify-center rounded-full"
           style={{
-            width: 'clamp(200px, 16.67vw, 320px)',
-            height: 'clamp(200px, 16.67vw, 320px)',
+            width: 'clamp(150px, 48vw, 320px)',
+            height: 'clamp(150px, 48vw, 320px)',
             border: '1px solid #C9B3FF26',
             backgroundColor: '#C9B3FF1A',
             boxShadow: '0 0 36px #C9B3FF70, 0 0 88px #C9B3FF30',
@@ -135,8 +135,8 @@ const LoadingPageComponent = memo(function LoadingPage() {
             decoding="async"
             className="logo-spin opacity-70 select-none"
             style={{ 
-              width: 'clamp(100px, 8.85vw, 170px)', 
-              height: 'clamp(100px, 8.85vw, 170px)', 
+              width: 'clamp(76px, 24vw, 170px)', 
+              height: 'clamp(76px, 24vw, 170px)', 
               objectFit: 'contain',
               willChange: 'transform'
             }}

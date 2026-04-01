@@ -6,8 +6,8 @@ interface ThemeLanguageControlsProps {
   readonly className?: string;
 }
 
-const DEFAULT_WRAPPER_CLASS = 'fixed right-4 top-4 z-30 flex items-center gap-2 sm:right-8 sm:top-6 sm:gap-3';
-const BASE_BUTTON_CLASS = 'min-w-[64px] rounded-full border px-7 py-3 transition-all duration-200 ease-out hover:-translate-y-px hover:shadow-md';
+const DEFAULT_WRAPPER_CLASS = 'fixed right-2 top-2 z-30 flex items-center gap-1.5 sm:right-8 sm:top-6 sm:gap-3';
+const BASE_BUTTON_CLASS = 'min-w-[44px] rounded-full border px-3 py-1.5 text-[11px] leading-none transition-all duration-200 ease-out hover:-translate-y-px hover:shadow-md sm:min-w-[64px] sm:px-7 sm:py-3 sm:text-sm';
 const LIGHT_THEME_BUTTON_CLASS = 'bg-[#E7DDFC] text-[#2C2440] border-[#C8B6EB] hover:bg-[#DED0FA] hover:border-[#B9A2E6]';
 const DARK_THEME_BUTTON_CLASS = 'bg-[#2C2440] text-[#EDE8FA] border-[#463865] hover:bg-[#3A2E55] hover:border-[#5B4A82]';
 

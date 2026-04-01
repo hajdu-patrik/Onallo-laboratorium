@@ -6,19 +6,26 @@ const resources = {
   en: {
     translation: {
       login: {
-        subtitle: 'Mechanic Portal',
+        title: 'Welcome Auto Repair Shop Manager Tool',
+        subtitle: 'Sign in to continue',
+        identifierLabel: 'Email / Phone Number',
+        identifierPlaceholder: 'Email / Phone Number',
         email: 'Email',
         phone: 'Phone',
         password: 'Password',
         submit: 'Login',
         loading: 'Logging in...',
-        invalidCredentials: 'Invalid credentials provided',
-        passwordIncorrect: 'Incorrect password.',
-        identifierNotFound: 'Email or phone number does not exist.',
+        invalidFormat: 'Invalid format. Try again.',
+        invalidCredentials: 'Invalid login credentials. Please try again.',
+        passwordIncorrect: 'Invalid login credentials. Please try again.',
+        identifierNotFound: 'Username/phone number does not exist.',
+        attemptsExceeded: 'Too many attempts. Please try again later.',
+        attemptsExceededWithDuration: 'Too many attempts. Try again in {{minutes}} minutes.',
         serverError500: 'Internal server error (500). Please try again later.',
         databaseUnavailable: 'Database is currently unavailable.',
         error: 'Login failed. Please try again.',
         mechanicOnly: 'Only mechanics can access this portal',
+        helpText: 'Need help? Contact your administrator!',
       },
       layout: {
         logout: 'Logout',
@@ -41,19 +48,26 @@ const resources = {
   hu: {
     translation: {
       login: {
-        subtitle: 'Szerviz Portál',
+        title: 'Üdvözli az Autószerviz Kezelő Eszköz',
+        subtitle: 'A folytatáshoz jelentkezzen be',
+        identifierLabel: 'E-mail / Telefonszám',
+        identifierPlaceholder: 'E-mail / Telefonszám',
         email: 'E-mail',
         phone: 'Telefon',
         password: 'Jelszó',
         submit: 'Bejelentkezés',
         loading: 'Bejelentkezés...',
-        invalidCredentials: 'Érvénytelen hitelesítési adatok',
-        passwordIncorrect: 'Hibás jelszó.',
-        identifierNotFound: 'Az e-mail cím vagy telefonszám nem létezik.',
+        invalidFormat: 'Érvénytelen formátum. Próbálja újra.',
+        invalidCredentials: 'Érvénytelen bejelentkezési adatok. Próbálja újra.',
+        passwordIncorrect: 'Érvénytelen bejelentkezési adatok. Próbálja újra.',
+        identifierNotFound: 'A felhasználónév/telefonszám nem létezik.',
+        attemptsExceeded: 'Túl sok próbálkozás. Próbálja újra később.',
+        attemptsExceededWithDuration: 'Túl sok próbálkozás. Próbálja újra {{minutes}} perc múlva.',
         serverError500: 'Belső szerverhiba (500). Kérjük, próbálja újra később.',
         databaseUnavailable: 'Az adatbázis jelenleg nem érhető el.',
         error: 'A bejelentkezés sikertelen. Próbálja újra.',
         mechanicOnly: 'Csak szerelők férhetnek hozzá a portálhoz',
+        helpText: 'Segítség kell? Lépjen kapcsolatba a rendszergazdával!',
       },
       layout: {
         logout: 'Kijelentkezés',
@@ -75,14 +89,14 @@ const resources = {
   },
 };
 
-const savedLang = localStorage.getItem('preferred-language') || undefined;
+const savedLang = localStorage.getItem('preferred-language') || 'hu';
 
 i18next
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
     resources,
-    fallbackLng: 'en',
+    fallbackLng: 'hu',
     lng: savedLang,
     showSupportNotice: false,
     interpolation: {
@@ -90,7 +104,9 @@ i18next
     },
     detection: {
       order: ['localStorage', 'navigator'],
+      lookupLocalStorage: 'preferred-language',
       caches: ['localStorage'],
+      excludeCacheFor: ['cimode'],
     },
   });
 

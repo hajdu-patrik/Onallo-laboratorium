@@ -73,6 +73,21 @@ public static partial class AuthEndpoints
         }
 
         var signInResult = await signInManager.CheckPasswordSignInAsync(identityUser, request.Password, lockoutOnFailure: true);
+        if (signInResult.IsLockedOut)
+        {
+            var lockoutEnd = await userManager.GetLockoutEndDateAsync(identityUser);
+            var retryAfterSeconds = lockoutEnd.HasValue
+                ? Math.Max(1, (int)Math.Ceiling((lockoutEnd.Value.UtcDateTime - DateTime.UtcNow).TotalSeconds))
+                : 60;
+
+            return Results.Json(new
+            {
+                code = "lockout_active",
+                message = "Too many attempts. Try again later.",
+                retryAfterSeconds
+            }, statusCode: StatusCodes.Status429TooManyRequests);
+        }
+
         if (!signInResult.Succeeded)
         {
             return Results.Problem(
