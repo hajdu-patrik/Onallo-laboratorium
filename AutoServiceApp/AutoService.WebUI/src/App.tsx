@@ -12,6 +12,7 @@ import './utils/i18n';
 
 function App() {
   const setIsAuthenticated = useAuthStore((state) => state.setIsAuthenticated);
+  const setIsLoading = useAuthStore((state) => state.setIsLoading);
 
   const dashboardElement = (
     <PrivateRoute>
@@ -22,10 +23,29 @@ function App() {
   );
 
   useEffect(() => {
-    // Restore auth state from localStorage
-    const user = authService.restoreAuth();
-    setIsAuthenticated(!!user);
-  }, [setIsAuthenticated]);
+    let isCancelled = false;
+
+    const restoreAuthState = async () => {
+      setIsLoading(true);
+
+      try {
+        const user = await authService.restoreAuth();
+        if (!isCancelled) {
+          setIsAuthenticated(!!user);
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void restoreAuthState();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [setIsAuthenticated, setIsLoading]);
 
   return (
     <>

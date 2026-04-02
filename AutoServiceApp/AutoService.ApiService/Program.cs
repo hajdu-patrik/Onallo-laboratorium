@@ -97,8 +97,15 @@ builder.Services.AddRateLimiter(options =>
         context.HttpContext.Response.Headers.RetryAfter =
             ((int)Math.Ceiling(loginBanWindow.TotalSeconds)).ToString(CultureInfo.InvariantCulture);
 
+        var retryAfterSeconds = (int)Math.Ceiling(loginBanWindow.TotalSeconds);
+
         await context.HttpContext.Response.WriteAsJsonAsync(
-            new { error = "Too many login attempts. Try again in 3 minutes." },
+            new
+            {
+                code = "login_rate_limited",
+                error = "Too many login attempts. Try again in 3 minutes.",
+                retryAfterSeconds
+            },
             cancellationToken);
     };
 
@@ -161,7 +168,12 @@ app.Use(async (context, next) =>
                 var retryAfterSeconds = (int)Math.Ceiling((blockedUntil - now).TotalSeconds);
                 context.Response.StatusCode = StatusCodes.Status429TooManyRequests;
                 context.Response.Headers.RetryAfter = retryAfterSeconds.ToString(CultureInfo.InvariantCulture);
-                await context.Response.WriteAsJsonAsync(new { error = "Too many login attempts. Try again in 3 minutes." });
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    code = "login_banned",
+                    error = "Too many login attempts. Try again in 3 minutes.",
+                    retryAfterSeconds
+                });
                 return;
             }
 

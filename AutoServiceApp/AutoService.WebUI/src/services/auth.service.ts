@@ -1,5 +1,5 @@
 import { apiClient } from './api.client';
-import type { LoginRequest, LoginResponse, AuthUser } from '../types/types';
+import type { LoginRequest, LoginResponse, AuthUser, ValidateTokenResponse } from '../types/types';
 import { jwtDecode } from 'jwt-decode';
 import { useAuthStore } from '../store/auth.store';
 
@@ -80,16 +80,30 @@ export const authService = {
   /**
    * Restore auth state from localStorage
    */
-  restoreAuth(): AuthUser | null {
+  async restoreAuth(): Promise<AuthUser | null> {
     const user = this.getUser();
-    if (user && !this.isTokenExpired()) {
-      useAuthStore.setState({ user, isAuthenticated: true });
-      return user;
+
+    if (!user || this.isTokenExpired()) {
+      this.logout();
+      return null;
     }
 
-    // Clear invalid token
-    this.logout();
-    return null;
+    try {
+      const response = await apiClient.get<ValidateTokenResponse>('/api/auth/validate');
+      const validatedUser: AuthUser = {
+        ...user,
+        personId: response.data.personId,
+        personType: response.data.personType,
+        email: response.data.email,
+      };
+
+      localStorage.setItem(AUTH_USER_KEY, JSON.stringify(validatedUser));
+      useAuthStore.setState({ user: validatedUser, isAuthenticated: true });
+      return validatedUser;
+    } catch {
+      this.logout();
+      return null;
+    }
   },
 
   /**

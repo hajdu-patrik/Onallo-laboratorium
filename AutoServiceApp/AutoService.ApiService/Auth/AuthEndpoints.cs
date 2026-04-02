@@ -20,6 +20,7 @@ public static partial class AuthEndpoints
 
         group.MapPost("/register", RegisterAsync);
         group.MapPost("/login", LoginAsync).RequireRateLimiting("AuthLoginAttempts");
+        group.MapGet("/validate", ValidateTokenAsync).RequireAuthorization();
 
         return endpoints;
     }

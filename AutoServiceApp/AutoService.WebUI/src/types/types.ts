@@ -16,6 +16,12 @@ export interface LoginResponse {
   email: string;
 }
 
+export interface ValidateTokenResponse {
+  personId: number;
+  personType: string;
+  email: string;
+}
+
 export interface AuthUser {
   personId: number;
   personType: string;

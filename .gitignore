@@ -19,6 +19,7 @@ Desktop.ini
 *.sln.docstates
 *.swp
 *.swo
+.aspire
 *~
 
 # =========================
@@ -68,7 +69,6 @@ packages/
 .env
 .env.*
 !.env.example
-
 *.local
 
 # ASP.NET local development settings
@@ -76,7 +76,7 @@ packages/
 **/appsettings.Local.json
 
 # Local private documentation (not for repository)
-/Private-Docs/
+docs/Private-Docs/
 *.private.md
 
 # User Secrets / certificates / keys
@@ -92,5 +92,3 @@ docker-compose.override.yml
 # Temporary files
 tmp/
 temp/
-.claude/settings.json
-.claude/projects/

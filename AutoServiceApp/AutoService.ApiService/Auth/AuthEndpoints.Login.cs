@@ -22,8 +22,8 @@ public static partial class AuthEndpoints
      * @param db Entity Framework Core database context.
      * @param configuration Application configuration (used to read JwtSettings:Secret).
      * @param cancellationToken Cancellation token for the async operation.
-     * @return 200 OK with JWT token and profile info, 404 when email/phone is not found,
-     *         401 when password is invalid, or 500 if the linked domain record is missing.
+    * @return 200 OK with JWT token and profile info, 401 for invalid credentials,
+    *         429 when account lockout is active, or 500 if the linked domain record is missing.
      */
     private static async Task<IResult> LoginAsync(
         LoginRequest request,
@@ -65,11 +65,10 @@ public static partial class AuthEndpoints
 
         if (identityUser is null)
         {
-            return Results.NotFound(new
-            {
-                code = "identifier_not_found",
-                message = "The provided email or phone number does not exist."
-            });
+            return Results.Problem(
+                title: "invalid_credentials",
+                detail: "Invalid login credentials.",
+                statusCode: StatusCodes.Status401Unauthorized);
         }
 
         var signInResult = await signInManager.CheckPasswordSignInAsync(identityUser, request.Password, lockoutOnFailure: true);
@@ -91,8 +90,8 @@ public static partial class AuthEndpoints
         if (!signInResult.Succeeded)
         {
             return Results.Problem(
-                title: "password_incorrect",
-                detail: "The provided password is incorrect.",
+                title: "invalid_credentials",
+                detail: "Invalid login credentials.",
                 statusCode: StatusCodes.Status401Unauthorized);
         }
 

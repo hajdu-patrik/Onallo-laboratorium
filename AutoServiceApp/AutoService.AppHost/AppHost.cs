@@ -13,6 +13,7 @@ if (!int.TryParse(webUiPortRaw, out var webUiPort))
 }
 
 var postgresPassword = builder.AddParameter("postgres-password", secret: true);
+var jwtSecret = builder.AddParameter("jwt-secret", secret: true);
 
 // Database definition (PostgreSQL)
 var postgresServer = builder.AddPostgres("postgres", password: postgresPassword, port: postgresPort)
@@ -24,7 +25,8 @@ var postgresDb = postgresServer.AddDatabase("AutoServiceDb");
 // Backend (ASP.NET Core) definition and reference to PostgreSQL
 var apiService = builder.AddProject<Projects.AutoService_ApiService>("apiservice")
                         .WithReference(postgresDb)
-                        .WaitFor(postgresDb);
+                        .WaitFor(postgresDb)
+                        .WithEnvironment("JwtSettings__Secret", jwtSecret);
 
 // Frontend (React) setting up and reference to API
 var webUi = builder.AddNpmApp("webui", "../AutoService.WebUI", "dev")

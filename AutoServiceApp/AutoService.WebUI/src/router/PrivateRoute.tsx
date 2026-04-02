@@ -8,6 +8,11 @@ interface PrivateRouteProps {
 
 const PrivateRouteComponent = memo(function PrivateRoute({ children }: PrivateRouteProps) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isLoading = useAuthStore((state) => state.isLoading);
+
+  if (isLoading) {
+    return null;
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;

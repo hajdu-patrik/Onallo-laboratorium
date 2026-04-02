@@ -1,4 +1,4 @@
-@AutoService_ApiService_HostAddress = https://localhost:7176
+@AutoService_ApiService_HostAddress = https://localhost:5200
 @NewMechanicEmail = test.mechanic@example.com
 @NewMechanicPhone = +36309876543
 @NewMechanicPassword = Test@1234

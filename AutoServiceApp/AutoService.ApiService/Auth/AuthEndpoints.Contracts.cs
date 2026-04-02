@@ -24,4 +24,7 @@ public static partial class AuthEndpoints
 
     /** Returned after a successful login containing the JWT and basic profile info. */
     internal sealed record LoginResponse(string Token, DateTime ExpiresAtUtc, int PersonId, string PersonType, string Email);
+
+    /** Returned by GET /api/auth/validate when the token is valid. */
+    internal sealed record ValidateTokenResponse(int PersonId, string PersonType, string Email);
 }
