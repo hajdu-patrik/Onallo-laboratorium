@@ -29,7 +29,10 @@
 - Login accepts email or phone number.
 - Identifier normalization is mandatory across register/login:
   - emails are trimmed + lowercased,
-  - Hungarian phone inputs (`+36`, `36`, `06`, spaced/punctuated forms) normalize to canonical `36xxxxxxxxx`.
+  - Hungarian phone inputs (`+36`, `36`, `06`, spaced/punctuated forms) normalize to canonical national form with strict prefix/length rules:
+    - `361xxxxxxx` (Budapest),
+    - `36(20|21|30|31|50|70)xxxxxxx` (mobile/nomadic),
+    - `36<approved 2-digit area>xxxxxx` (geographic).
 - Register enforces duplicate phone detection on normalized values, including equivalent formats.
 - Auth session model is cookie-based:
   - access token in HttpOnly cookie (`autoservice_at`),

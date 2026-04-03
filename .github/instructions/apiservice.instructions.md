@@ -29,7 +29,10 @@ description: "Use when editing backend API, auth, EF Core model, migrations, and
 - Keep login protections: lockout (5 failed attempts, 15 min lockout), rate limit (10 req/min), and temporary ban behavior (3 min) consistent unless explicitly requested.
 - Keep auth input normalization consistent across register/login:
   - emails are trimmed + lowercased,
-  - Hungarian phone formats (`+36`, `36`, `06`, spaced/punctuated forms) normalize to canonical `36xxxxxxxxx`.
+  - Hungarian phone formats (`+36`, `36`, `06`, spaced/punctuated forms) normalize to canonical national form with strict prefix/length rules:
+    - `361xxxxxxx` (Budapest),
+    - `36(20|21|30|31|50|70)xxxxxxx` (mobile/nomadic),
+    - `36<approved 2-digit area>xxxxxx` (geographic).
 - Registration must reject duplicate phone numbers even when equivalent values are provided in different formats.
 - JWT token lifetime is 10 minutes.
 - JWT validation: issuer/audience validation enabled, lifetime validation enabled, clock skew 1 minute.

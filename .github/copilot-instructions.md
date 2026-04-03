@@ -113,7 +113,7 @@ Prioritize maintainable, domain-safe, incremental changes that align with the ex
 	- registration is mechanic-only,
 	- login accepts email or phone number,
 	- email inputs are trimmed and normalized to lowercase,
-	- Hungarian phone inputs accept common formats (`+36`, `36`, `06`, spaces/punctuation) and normalize to canonical `36xxxxxxxxx`,
+	- Hungarian phone inputs accept common formats (`+36`, `36`, `06`, spaces/punctuation) and normalize to canonical national form with strict prefix/length rules (`361xxxxxxx`, `36(20|21|30|31|50|70)xxxxxxx`, and approved 2-digit geographic area prefixes),
 	- register rejects duplicate phone numbers even if input format differs,
 	- unknown/wrong credentials return generic `401` (`invalid_credentials`),
 	- lockout is enabled (`5` failed attempts, `15` minutes lockout),

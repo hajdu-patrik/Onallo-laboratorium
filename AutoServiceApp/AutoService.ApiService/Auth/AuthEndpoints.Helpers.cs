@@ -4,7 +4,6 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Net.Mail;
 using System.Security.Claims;
 using System.Security.Cryptography;
-using System.Text.RegularExpressions;
 using System.Text;
 
 namespace AutoService.ApiService.Auth;
@@ -91,58 +90,6 @@ public static partial class AuthEndpoints
 
         normalizedEmail = lowerCased;
         return true;
-    }
-
-    private static bool TryNormalizeHungarianPhoneNumber(string? rawValue, out string normalizedPhoneNumber)
-    {
-        normalizedPhoneNumber = string.Empty;
-
-        var trimmed = NormalizeOptional(rawValue);
-        if (trimmed is null)
-        {
-            return false;
-        }
-
-        var digitsOnly = Regex.Replace(trimmed, "\\D", string.Empty);
-        if (string.IsNullOrEmpty(digitsOnly))
-        {
-            return false;
-        }
-
-        var candidate = digitsOnly;
-
-        if (candidate.StartsWith("00", StringComparison.Ordinal))
-        {
-            candidate = candidate[2..];
-        }
-
-        if (candidate.StartsWith("06", StringComparison.Ordinal))
-        {
-            candidate = $"36{candidate[2..]}";
-        }
-
-        if (!candidate.StartsWith("36", StringComparison.Ordinal))
-        {
-            return false;
-        }
-
-        if (candidate.Length != 11)
-        {
-            return false;
-        }
-
-        if (!Regex.IsMatch(candidate, "^36\\d{9}$"))
-        {
-            return false;
-        }
-
-        normalizedPhoneNumber = candidate;
-        return true;
-    }
-
-    private static IReadOnlyCollection<string> BuildHungarianPhoneLookupCandidates(string normalizedPhoneNumber)
-    {
-        return [normalizedPhoneNumber, $"+{normalizedPhoneNumber}"];
     }
 
     private static string GenerateRefreshTokenValue()
