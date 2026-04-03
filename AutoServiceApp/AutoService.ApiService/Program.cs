@@ -18,6 +18,7 @@ builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, relo
 
 // Service registration section.
 builder.Services.AddOpenApi();
+builder.Services.AddMemoryCache();
 builder.Services.AddDbContext<AutoServiceDbContext>(options =>
 {
     var connectionString = ConnectionStringResolver.Resolve(builder.Configuration);
@@ -29,6 +30,16 @@ builder.Services.AddDbContext<AutoServiceDbContext>(options =>
 var jwtSecret = JwtSettingsResolver.ResolveSecret(builder.Configuration);
 var jwtIssuer = builder.Configuration["JwtSettings:Issuer"] ?? "AutoService.ApiService";
 var jwtAudience = builder.Configuration["JwtSettings:Audience"] ?? "AutoService.WebUI";
+var webUiOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+    ?.Where(x => !string.IsNullOrWhiteSpace(x))
+    .ToArray()
+    ?? [];
+
+if (webUiOrigins.Length == 0)
+{
+    throw new InvalidOperationException(
+        "CORS allowed origins are missing. Configure 'Cors:AllowedOrigins' for the WebUI endpoint.");
+}
 var loginRateLimitWindow = TimeSpan.FromMinutes(1);
 var loginBanWindow = TimeSpan.FromMinutes(3);
 var loginBanByClient = new ConcurrentDictionary<string, DateTimeOffset>();
@@ -60,6 +71,35 @@ builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                if (string.IsNullOrWhiteSpace(context.Token) &&
+                    context.Request.Cookies.TryGetValue(AuthCookieNames.AccessToken, out var accessTokenCookie))
+                {
+                    context.Token = accessTokenCookie;
+                }
+
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = context =>
+            {
+                var jwtId = context.Principal?.FindFirst("jti")?.Value;
+
+                if (!string.IsNullOrWhiteSpace(jwtId))
+                {
+                    var denylist = context.HttpContext.RequestServices.GetRequiredService<ITokenDenylistService>();
+                    if (denylist.IsRevoked(jwtId))
+                    {
+                        context.Fail("Token has been revoked.");
+                    }
+                }
+
+                return Task.CompletedTask;
+            }
+        };
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,
@@ -124,13 +164,15 @@ builder.Services.AddCors(options =>
     options.AddPolicy("WebUIPolicy", corsPolicyBuilder =>
     {
         corsPolicyBuilder
-            .AllowAnyOrigin()
+            .WithOrigins(webUiOrigins)
+            .AllowCredentials()
             .AllowAnyMethod()
             .AllowAnyHeader();
     });
 });
 
 builder.Services.AddAuthorization();
+builder.Services.AddScoped<ITokenDenylistService, TokenDenylistService>();
 
 // Application services.
 var app = builder.Build();

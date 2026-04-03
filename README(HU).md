@@ -38,7 +38,9 @@ Skill források:
 
 ## Hitelesítés (magas szintű)
 
-- A rendszer JWT-alapú hitelesítést használ ASP.NET Core Identity háttérrel.
+- A rendszer ASP.NET Core Identity + JWT alapon működik, backend által kezelt HttpOnly cookie sessionnel.
+- Az access és refresh tokenek biztonságos HttpOnly cookie-kban vannak, refresh token rotációval és szerveroldali (hash-elt) tárolással.
+- Jelenlegi auth endpointok: `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/refresh`, `POST /api/auth/logout`, `GET /api/auth/validate`.
 - A dashboard hozzáférés szerelői fiókokra van tervezve.
 - Részletes biztonsági és üzemeltetési információk szándékosan nem publikusak ebben a README-ben.
 

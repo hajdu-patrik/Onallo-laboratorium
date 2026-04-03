@@ -93,7 +93,7 @@ Prioritize maintainable, domain-safe, incremental changes that align with the ex
 - Configure authentication with ASP.NET Core Identity + JWT Bearer; read the signing secret from `JwtSettings:Secret`.
 - Only **mechanics** can register and log in; **customers are passive domain records** (vehicle owners, notification targets) with no login account and no `IdentityUserId`.
 - Keep registration logic transactional: create `IdentityUser` and linked `Mechanic` domain record together, linked by `People.IdentityUserId`.
-- Login endpoints should verify credentials through Identity and issue JWTs that include domain linkage claims such as person id and person type.
+- Login/refresh/logout endpoints should verify credentials/session through Identity + persisted refresh tokens and maintain HttpOnly cookie auth state.
 - Keep JWT secrets out of committed config; use `appsettings.Local.json`, environment variables, or user secrets.
 - For local auth testing outside AppHost, keep `JwtSettings:Secret` in `appsettings.Local.json` (gitignored) or use the `JwtSettings__Secret` environment variable.
 - Use cancellation tokens for async flows where applicable.
@@ -104,26 +104,37 @@ Prioritize maintainable, domain-safe, incremental changes that align with the ex
 - Current mapped endpoints in `AutoService.ApiService`:
 	- `POST /api/auth/register`
 	- `POST /api/auth/login` (rate-limited by policy `AuthLoginAttempts`)
+	- `POST /api/auth/refresh`
+	- `POST /api/auth/logout` (authorized)
+	- `GET /api/auth/validate` (authorized)
 	- `GET /openapi/v1.json` in Development (`app.MapOpenApi()`)
 - No `Customer`, `Vehicle`, or `Appointment` CRUD endpoints are currently mapped.
 - Auth and login behavior currently implemented:
 	- registration is mechanic-only,
 	- login accepts email or phone number,
-	- unknown email/phone returns `404` with `identifier_not_found`,
-	- wrong password returns `401` with `password_incorrect`,
+	- email inputs are trimmed and normalized to lowercase,
+	- Hungarian phone inputs accept common formats (`+36`, `36`, `06`, spaces/punctuation) and normalize to canonical `36xxxxxxxxx`,
+	- register rejects duplicate phone numbers even if input format differs,
+	- unknown/wrong credentials return generic `401` (`invalid_credentials`),
 	- lockout is enabled (`5` failed attempts, `15` minutes lockout),
 	- login rate limit is `10` requests per minute per client IP,
 	- temporary login ban window after rate-limit rejection is currently `3` minutes,
-	- login JWT lifetime is currently `10` minutes.
+	- access token lifetime is currently `10` minutes,
+	- refresh token lifetime is currently `7` days,
+	- access and refresh tokens are stored in HttpOnly cookies,
+	- refresh tokens are persisted hashed and rotated on refresh.
 - JWT validation requirements currently enforced:
 	- signed tokens only,
 	- issuer and audience validation enabled,
 	- lifetime validation enabled,
 	- clock skew set to `1` minute,
-	- secret must be configured and at least `32` bytes.
+	- secret must be configured and at least `32` bytes,
+	- access token may be read from cookie,
+	- denylised `jti` values are rejected.
 - Security middleware currently active:
 	- `UseHttpsRedirection()` always,
 	- `UseHsts()` outside Development,
+	- `UseCors("WebUIPolicy")`,
 	- `UseRateLimiter()`, `UseAuthentication()`, `UseAuthorization()`.
 - Seeding and credential safety:
 	- `DemoDataInitializer` runs migrations on startup,
@@ -134,9 +145,16 @@ Prioritize maintainable, domain-safe, incremental changes that align with the ex
 - `AutoService.ApiService/Contracts` remains minimal and should be expanded as endpoint surface grows.
 - `Customer`, `Vehicle`, and `Appointment` CRUD endpoints are still not mapped.
 - Frontend currently covers login/dashboard/404 flows only; no domain CRUD UI yet.
-- CORS policy is currently permissive (`AllowAnyOrigin`) and should be tightened for production.
+- Token denylist is currently in-memory only; horizontal scale/multi-instance deployments need distributed denylist/session invalidation strategy.
 - `AutoService.ServiceDefaults` health endpoint extensions exist, but API does not currently call `MapDefaultEndpoints()`.
 - No dedicated unit/integration test project exists yet.
+
+## API Test Coverage Snapshot
+- `AutoService.ApiService.http` includes an auth full matrix for:
+	- register (email-only, email+phone, duplicates, invalid email/phone, invalid person type/expertise),
+	- login (email normalization and phone format matrix),
+	- cookie session lifecycle (validate/refresh/logout + unauthorized follow-ups),
+	- security manual tests for denylist bypass and rotated refresh replay attempts.
 
 ## Aspire Rules
 - `AutoService.AppHost` is the default local entry point.

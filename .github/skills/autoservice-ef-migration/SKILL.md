@@ -94,6 +94,7 @@ Use these psql commands:
 \d vehicles
 \d appointments
 \d appointmentmechanics
+\d refreshtokens
 \d "AspNetUsers"
 \d "AspNetRoles"
 \d "AspNetUserRoles"

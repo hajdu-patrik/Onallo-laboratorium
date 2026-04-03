@@ -1,5 +1,11 @@
 using AutoService.ApiService.Models;
 using Microsoft.AspNetCore.Identity;
+using System.IdentityModel.Tokens.Jwt;
+using System.Net.Mail;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text.RegularExpressions;
+using System.Text;
 
 namespace AutoService.ApiService.Auth;
 
@@ -56,5 +62,135 @@ public static partial class AuthEndpoints
         {
             errors[key] = [$"{key} is required."];
         }
+    }
+
+    private static bool TryNormalizeEmail(string? rawValue, out string normalizedEmail)
+    {
+        normalizedEmail = string.Empty;
+
+        var trimmed = NormalizeOptional(rawValue);
+        if (trimmed is null)
+        {
+            return false;
+        }
+
+        var lowerCased = trimmed.ToLowerInvariant();
+
+        try
+        {
+            var parsed = new MailAddress(lowerCased);
+            if (!string.Equals(parsed.Address, lowerCased, StringComparison.Ordinal))
+            {
+                return false;
+            }
+        }
+        catch
+        {
+            return false;
+        }
+
+        normalizedEmail = lowerCased;
+        return true;
+    }
+
+    private static bool TryNormalizeHungarianPhoneNumber(string? rawValue, out string normalizedPhoneNumber)
+    {
+        normalizedPhoneNumber = string.Empty;
+
+        var trimmed = NormalizeOptional(rawValue);
+        if (trimmed is null)
+        {
+            return false;
+        }
+
+        var digitsOnly = Regex.Replace(trimmed, "\\D", string.Empty);
+        if (string.IsNullOrEmpty(digitsOnly))
+        {
+            return false;
+        }
+
+        var candidate = digitsOnly;
+
+        if (candidate.StartsWith("00", StringComparison.Ordinal))
+        {
+            candidate = candidate[2..];
+        }
+
+        if (candidate.StartsWith("06", StringComparison.Ordinal))
+        {
+            candidate = $"36{candidate[2..]}";
+        }
+
+        if (!candidate.StartsWith("36", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        if (candidate.Length != 11)
+        {
+            return false;
+        }
+
+        if (!Regex.IsMatch(candidate, "^36\\d{9}$"))
+        {
+            return false;
+        }
+
+        normalizedPhoneNumber = candidate;
+        return true;
+    }
+
+    private static IReadOnlyCollection<string> BuildHungarianPhoneLookupCandidates(string normalizedPhoneNumber)
+    {
+        return [normalizedPhoneNumber, $"+{normalizedPhoneNumber}"];
+    }
+
+    private static string GenerateRefreshTokenValue()
+    {
+        var bytes = RandomNumberGenerator.GetBytes(64);
+        return Convert.ToBase64String(bytes);
+    }
+
+    private static string HashRefreshToken(string token)
+    {
+        var hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(token));
+        return Convert.ToHexString(hashBytes);
+    }
+
+    private static CookieOptions BuildAccessTokenCookieOptions(TimeSpan ttl)
+    {
+        return new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Strict,
+            IsEssential = true,
+            Path = "/",
+            MaxAge = ttl
+        };
+    }
+
+    private static CookieOptions BuildRefreshTokenCookieOptions(TimeSpan ttl)
+    {
+        return new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Strict,
+            IsEssential = true,
+            Path = "/",
+            MaxAge = ttl
+        };
+    }
+
+    private static DateTimeOffset? ParseTokenExpiry(ClaimsPrincipal user)
+    {
+        var expClaim = user.FindFirst(JwtRegisteredClaimNames.Exp)?.Value;
+        if (!long.TryParse(expClaim, out var expUnix))
+        {
+            return null;
+        }
+
+        return DateTimeOffset.FromUnixTimeSeconds(expUnix);
     }
 }

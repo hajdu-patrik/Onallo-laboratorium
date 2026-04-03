@@ -38,7 +38,9 @@ Skill sources:
 
 ## Authentication (High Level)
 
-- Authentication is JWT-based via ASP.NET Core Identity.
+- Authentication is based on ASP.NET Core Identity + JWT, with backend-managed HttpOnly cookie sessions.
+- Access and refresh tokens are stored in secure HttpOnly cookies, with refresh token rotation and server-side persistence (hashed).
+- Auth endpoints currently exposed: `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/refresh`, `POST /api/auth/logout`, `GET /api/auth/validate`.
 - Dashboard access is for mechanics only.
 - Sensitive operational/security details are intentionally not published in this README.
 

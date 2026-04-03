@@ -31,8 +31,12 @@ public static partial class AuthEndpoints
             return Results.ValidationProblem(validationErrors);
         }
 
-        var email = request.Email.Trim();
-        var phoneNumber = NormalizeOptional(request.PhoneNumber);
+        _ = TryNormalizeEmail(request.Email, out var email);
+        var phoneNumber = NormalizeOptional(request.PhoneNumber) is null
+            ? null
+            : TryNormalizeHungarianPhoneNumber(request.PhoneNumber, out var normalizedPhone)
+                ? normalizedPhone
+                : null;
 
         if (await userManager.FindByEmailAsync(email) is not null)
         {
@@ -44,8 +48,9 @@ public static partial class AuthEndpoints
 
         if (!string.IsNullOrWhiteSpace(phoneNumber))
         {
+            var phoneLookupCandidates = BuildHungarianPhoneLookupCandidates(phoneNumber);
             var phoneNumberInUse = await userManager.Users
-                .AnyAsync(x => x.PhoneNumber == phoneNumber, cancellationToken);
+                .AnyAsync(x => x.PhoneNumber != null && phoneLookupCandidates.Contains(x.PhoneNumber.Trim()), cancellationToken);
 
             if (phoneNumberInUse)
             {
@@ -127,9 +132,14 @@ public static partial class AuthEndpoints
         AddRequired(errors, nameof(request.Email), request.Email);
         AddRequired(errors, nameof(request.Password), request.Password);
 
-        if (!string.IsNullOrWhiteSpace(request.Email) && !request.Email.Contains('@'))
+        if (!string.IsNullOrWhiteSpace(request.Email) && !TryNormalizeEmail(request.Email, out _))
         {
             errors[nameof(request.Email)] = ["Email must be a valid email address."];
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.PhoneNumber) && !TryNormalizeHungarianPhoneNumber(request.PhoneNumber, out _))
+        {
+            errors[nameof(request.PhoneNumber)] = ["Phone number must be a valid Hungarian number."];
         }
 
         var isMechanic = string.Equals(request.PersonType, "mechanic", StringComparison.OrdinalIgnoreCase);

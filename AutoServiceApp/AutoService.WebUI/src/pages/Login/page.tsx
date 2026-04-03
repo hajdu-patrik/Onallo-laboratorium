@@ -5,6 +5,7 @@ import type { AxiosError } from 'axios';
 import { authService } from '../../services/auth.service';
 import { useAuthStore } from '../../store/auth.store';
 import { ThemeLanguageControls } from '../../components/layout/ThemeLanguageControls';
+import { Image } from '../../components/common/Image';
 
 interface ApiErrorPayload {
   readonly code?: string;
@@ -45,11 +46,11 @@ function parseIdentifier(value: string): ParsedIdentifier {
 
     return {
       kind: 'email',
-      email: trimmedValue,
+      email: trimmedValue.toLowerCase(),
     };
   }
 
-  const compactValue = trimmedValue.replaceAll(/[\s\-()]/g, '');
+  const compactValue = trimmedValue.replaceAll(/\D/g, '');
 
   if (!compactValue) {
     return { kind: 'invalid' };
@@ -58,20 +59,18 @@ function parseIdentifier(value: string): ParsedIdentifier {
   let normalizedValue = compactValue;
 
   if (normalizedValue.startsWith('00')) {
-    normalizedValue = `+${normalizedValue.slice(2)}`;
+    normalizedValue = normalizedValue.slice(2);
   }
 
   if (normalizedValue.startsWith('06')) {
-    normalizedValue = `+36${normalizedValue.slice(2)}`;
-  } else if (normalizedValue.startsWith('36')) {
-    normalizedValue = `+${normalizedValue}`;
+    normalizedValue = `36${normalizedValue.slice(2)}`;
   }
 
-  if (!normalizedValue.startsWith('+36')) {
+  if (!normalizedValue.startsWith('36')) {
     return { kind: 'invalid' };
   }
 
-  const nationalDigits = normalizedValue.slice(3);
+  const nationalDigits = normalizedValue.slice(2);
   const hasOnlyDigits = /^\d+$/.test(nationalDigits);
 
   if (!hasOnlyDigits || nationalDigits.length !== 9) {
@@ -80,7 +79,7 @@ function parseIdentifier(value: string): ParsedIdentifier {
 
   return {
     kind: 'phone',
-    phoneNumber: `+36${nationalDigits}`,
+    phoneNumber: `36${nationalDigits}`,
   };
 }
 
@@ -241,11 +240,20 @@ const LoginComponent = memo(function Login() {
 
       <div className="relative z-10 w-full max-w-md">
         <div className="rounded-2xl border border-[#D8D2E9] bg-white p-4 shadow-[0_12px_34px_rgba(44,36,64,0.14)] dark:border-[#2C2440] dark:bg-[#13131B] dark:shadow-[0_16px_36px_rgba(0,0,0,0.45)] sm:p-8">
-          <div className="relative mb-5 text-center sm:mb-7">
-            <h1 className="text-[clamp(1.5rem,5.5vw,2.05rem)] font-semibold leading-tight text-[#2C2440] dark:text-[#EDE8FA]">
-              {t('login.title')}
-            </h1>
-            <p className="mt-2 text-sm text-[#6A627F] dark:text-[#B9B0D3]">{t('login.subtitle')}</p>
+          <div className="relative mb-5 flex flex-col sm:mb-7">
+            <div className="mt-1 flex items-center justify-center">
+              <Image
+                src="/AppLogoFrameBlack.webp"
+                alt="AutoService logo"
+                className="block h-24 w-auto dark:hidden opacity-70 select-none"
+              />
+              <Image
+                src="/AppLogoFrameWhite.webp"
+                alt="AutoService logo"
+                className="hidden h-24 w-auto dark:block opacity-70 select-none"
+              />
+            </div>
+                 <p className="mt-2 text-sm text-[#6A627F] dark:text-[#B9B0D3]">{t('login.subtitle')}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-3.5 sm:space-y-4">

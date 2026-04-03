@@ -14,6 +14,7 @@ Objective:
 Repository policy:
 - AppHost config source: AutoServiceApp/AutoService.AppHost/appsettings.json (Ports section).
 - API local URL source: AutoServiceApp/AutoService.ApiService/Properties/launchSettings.json.
+- API CORS origin source: AutoServiceApp/AutoService.ApiService/appsettings.json and appsettings.Local.json (`Cors:AllowedOrigins`).
 - WebUI local source: AutoServiceApp/AutoService.WebUI/.env.development.
 - API client must require VITE_API_URL from environment; do not add hardcoded fallback.
 - vite serve mode must read PORT from environment and use strictPort true.
@@ -28,13 +29,15 @@ Implementation workflow:
 2. Keep API launch URL explicit in launchSettings.json.
 3. Set/update WebUI env values in .env.development.
 4. Ensure AppHost injects required endpoint env vars (for example VITE_API_URL).
-5. Update client/service code to read env-driven values only.
-6. Verify no hardcoded URL fallback remains.
+5. Ensure API CORS `AllowedOrigins` is explicitly configured for the WebUI origin (no permissive wildcard fallback when credentials are used).
+6. Update client/service code to read env-driven values only.
+7. Verify no hardcoded URL fallback remains.
 
 Validation checklist:
 - No new localhost URL literals were introduced in client runtime fallback logic.
 - VITE_API_URL is read from environment and required.
 - PORT is read from environment in vite config for serve mode.
+- API `Cors:AllowedOrigins` includes expected WebUI origins and matches credentialed cross-origin policy.
 - AppHost, API, and WebUI settings agree on ports and protocol.
 - Existing behavior remains stable after config change.
 

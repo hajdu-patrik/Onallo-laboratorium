@@ -1,7 +1,7 @@
 import { memo, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { authService } from '../services/auth.service';
+import { useAuthStore } from '../store/auth.store';
 import { useThemeStore } from '../store/theme.store';
 import { ThemeLanguageControls } from '../components/layout/ThemeLanguageControls';
 
@@ -11,12 +11,13 @@ const TIMER_TICK_MS = 50;
 const NotFoundComponent = memo(function NotFound() {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const theme = useThemeStore((state) => state.theme);
   const [remainingMs, setRemainingMs] = useState(REDIRECT_DURATION_MS);
 
   const redirectTarget = useMemo(
-    () => (authService.isAuthenticated() ? '/dashboard' : '/login'),
-    [],
+    () => (isAuthenticated ? '/dashboard' : '/login'),
+    [isAuthenticated],
   );
 
   useEffect(() => {

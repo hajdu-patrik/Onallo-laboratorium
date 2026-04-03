@@ -14,8 +14,8 @@ const LayoutComponent = memo(function Layout({ children }: LayoutProps) {
   const { t } = useTranslation();
   const user = useAuthStore((state) => state.user);
 
-  const handleLogout = useCallback(() => {
-    authService.logout();
+  const handleLogout = useCallback(async () => {
+    await authService.logout();
     navigate('/login');
   }, [navigate]);
 
@@ -40,7 +40,9 @@ const LayoutComponent = memo(function Layout({ children }: LayoutProps) {
           <div className="flex items-center gap-4">
             {/* Logout Button */}
             <button
-              onClick={handleLogout}
+              onClick={() => {
+                void handleLogout();
+              }}
               className="px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white font-medium transition-all"
             >
               {t('layout.logout')}

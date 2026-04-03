@@ -6,18 +6,22 @@ description: "Use when editing React frontend, API integration, routing, and UI 
 
 ## Authentication & Authorization
 
-- **JWT-based authentication**: Users (mechanics only) log in with email/phone + password.
-- **Token storage**: JWT tokens are stored in `localStorage` under `auth_token` key.
-- **Token lifespan**: Backend issues 10-minute JWT tokens; frontend validates expiration.
+- **Cookie-based authentication**: Users (mechanics only) log in with email/phone + password.
+- **Token storage**: Access/refresh tokens are managed by backend HttpOnly cookies (`autoservice_at`, `autoservice_rt`).
+- **Token lifespan**: Backend access token lifetime is 10 minutes, refresh token lifetime is 7 days.
 - **Login flow**:
   1. User sees Loading page (~2.5 seconds) only once on first browser load (`localStorage` key: `loading-page-seen`).
-  2. If no valid token exists, redirect to `/login`.
+  2. If no valid server session exists, redirect to `/login`.
   3. After successful login, redirect to `/` (dashboard).
-  4. JWT is automatically attached to all API requests via axios interceptor.
-- **Logout**: Clear `localStorage` and redirect to `/login`.
+  4. Axios client sends credentialed requests (`withCredentials`) and retries once through `/api/auth/refresh` after `401` (except auth endpoints).
+- **Logout**: Call backend `POST /api/auth/logout`, clear auth store state, then redirect to `/login`.
 - **Protected routes**: Use `<PrivateRoute>` wrapper to guard dashboard and other authenticated pages.
 - **Auth store**: Use Zustand (`useAuthStore`) to manage `isAuthenticated`, `user`, `error`, `isLoading`.
-- **Auth service**: Use `authService` from `src/services/auth.service.ts` for login/logout/token checks.
+- **Auth service**: Use `authService` from `src/services/auth.service.ts` for login/logout/validate-based restore.
+- **Identifier parsing** (login UI):
+  - emails are trimmed and lowercased before submit,
+  - Hungarian phone formats (`+36`, `36`, `06`, spaced/punctuated forms) are normalized before submit,
+  - invalid identifier format should be rejected client-side with explicit error.
 
 ## UI/UX & Theme
 
@@ -44,10 +48,10 @@ description: "Use when editing React frontend, API integration, routing, and UI 
 
 ## Services & State
 
-- **`src/services/auth.service.ts`**: Login, logout, token validation, token decode.
+- **`src/services/auth.service.ts`**: Login, logout, and auth-state restore via `/api/auth/validate`.
 - **`src/store/auth.store.ts`**: Zustand store for `user`, `isAuthenticated`, `isLoading`, `error`.
 - **`src/store/theme.store.ts`**: Zustand store for dark/light mode preference.
-- **`src/services/api.client.ts`**: Axios instance with JWT interceptor; requires `VITE_API_URL` from environment (no hardcoded URL fallback).
+- **`src/services/api.client.ts`**: Axios instance with credentialed cookie requests and refresh retry; requires `VITE_API_URL` from environment (no hardcoded URL fallback).
 - **`src/types/types.ts`**: TypeScript interfaces for API contracts (LoginRequest, LoginResponse, AuthUser).
 - **`src/utils/i18n.ts`**: i18next configuration and EN/HU translation resources.
 - **`vite.config.ts`**: In serve mode, dev server port is read from environment `PORT` and must be valid (`strictPort: true`).
@@ -55,20 +59,22 @@ description: "Use when editing React frontend, API integration, routing, and UI 
 ## Routing
 
 - `/login` → Login page (public).
-- `/` → Dashboard (protected, requires valid JWT).
-- `/dashboard` → Dashboard alias (protected, requires valid JWT).
+- `/` → Dashboard (protected, requires valid auth session).
+- `/dashboard` → Dashboard alias (protected, requires valid auth session).
 - `/*` → 404 Not Found page.
 - BrowserRouter should keep `future` flags enabled (`v7_startTransition`, `v7_relativeSplatPath`) to avoid React Router v7 deprecation warnings.
 
 ## API Integration
 
 - **Backend endpoints**:
-  - `POST /api/auth/login` – (email or phoneNumber) + password → token + profile.
-  - `POST /api/auth/login` failure semantics: `404 identifier_not_found` (unknown email/phone), `401 password_incorrect` (wrong password), `500` for linked domain record issues.
-  - All other API calls should attach JWT via Authorization header (`Bearer <token>`).
+  - `POST /api/auth/login` – (email or phoneNumber) + password → cookie session + profile.
+  - `POST /api/auth/refresh` – refresh token rotation + access cookie reissue.
+  - `POST /api/auth/logout` – refresh revoke + cookie clear.
+  - `GET /api/auth/validate` – validate active authenticated session.
+  - `POST /api/auth/login` failure semantics: generic `401 invalid_credentials`, `429` lockout/rate-limit, `500` linked domain-record issues.
 - **VITE_API_URL**: AppHost injects the API base URL as an environment variable.
 - **No URL hardcode fallback**: `VITE_API_URL` must come from env (AppHost or `.env.development`).
-- **Error handling**: Axios interceptor attaches JWT; login page maps `404/401/500` and network/database availability failures to dedicated EN/HU messages.
+- **Error handling**: Axios interceptor handles refresh-on-401 flow and login page maps `401/429/500` and network/database availability failures to dedicated EN/HU messages.
 
 ## Styling & Responsive Design
 
@@ -85,17 +91,15 @@ description: "Use when editing React frontend, API integration, routing, and UI 
 ## Key Dependencies
 
 - `react-router-dom` – Client-side routing.
-- `axios` – HTTP client (with JWT interceptor).
-- `jwt-decode` – Decode JWT tokens (client-side only).
+- `axios` – HTTP client (credentialed requests + refresh retry).
 - `zustand` – State management (auth, theme).
 - `i18next` + `react-i18next` – Internationalization.
 - `tailwindcss` – Styling (with dark mode support via `darkMode: 'class'`).
 
 ## Security Notes
 
-- Never log JWT tokens or sensitive user data to console.
-- Tokens are stored in `localStorage` (not httpOnly); consider security implications for production.
+- Never log tokens/cookies or sensitive user data to console.
+- Keep auth trust server-side via `/api/auth/validate` and backend cookie/session controls.
 - Only mechanics can log in; customers are managed server-side.
-- Always validate token expiration before making API calls.
 - Use HTTPS in production.
 

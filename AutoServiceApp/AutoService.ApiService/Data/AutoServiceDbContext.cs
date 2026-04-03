@@ -16,6 +16,7 @@ public sealed class AutoServiceDbContext(DbContextOptions<AutoServiceDbContext> 
     public DbSet<People> People => Set<People>();
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<Mechanic> Mechanics => Set<Mechanic>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Vehicle> Vehicles => Set<Vehicle>();
     public DbSet<Appointment> Appointments => Set<Appointment>();
 
@@ -92,6 +93,32 @@ public sealed class AutoServiceDbContext(DbContextOptions<AutoServiceDbContext> 
             entity.Property(x => x.Expertise)
                   .HasMaxLength(256)
                   .IsRequired();
+        });
+
+        // Refresh token mapping.
+        modelBuilder.Entity<RefreshToken>(entity =>
+        {
+            entity.ToTable("refreshtokens");
+
+            entity.Property(x => x.TokenHash)
+                .HasMaxLength(128)
+                .IsRequired();
+
+            entity.Property(x => x.CreatedByIpAddress)
+                .HasMaxLength(64);
+
+            entity.Property(x => x.CreatedByUserAgent)
+                .HasMaxLength(512);
+
+            entity.HasIndex(x => x.TokenHash)
+                .IsUnique();
+
+            entity.HasIndex(x => new { x.MechanicId, x.ExpiresAtUtc });
+
+            entity.HasOne(x => x.Mechanic)
+                .WithMany()
+                .HasForeignKey(x => x.MechanicId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         // Vehicle mapping.

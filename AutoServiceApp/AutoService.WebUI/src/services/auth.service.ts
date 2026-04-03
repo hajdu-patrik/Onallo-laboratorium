@@ -1,10 +1,14 @@
 import { apiClient } from './api.client';
 import type { LoginRequest, LoginResponse, AuthUser, ValidateTokenResponse } from '../types/types';
-import { jwtDecode } from 'jwt-decode';
 import { useAuthStore } from '../store/auth.store';
 
-const AUTH_TOKEN_KEY = 'auth_token';
-const AUTH_USER_KEY = 'auth_user';
+function setAuthenticatedUser(user: AuthUser): void {
+  useAuthStore.setState({ user, isAuthenticated: true, error: null });
+}
+
+function clearAuthState(): void {
+  useAuthStore.getState().clearAuth();
+}
 
 export const authService = {
   /**
@@ -12,22 +16,16 @@ export const authService = {
    */
   async login(request: LoginRequest): Promise<AuthUser> {
     const response = await apiClient.post<LoginResponse>('/api/auth/login', request);
-    const { token, expiresAtUtc, personId, personType, email } = response.data;
+    const { expiresAtUtc, personId, personType, email } = response.data;
 
     const authUser: AuthUser = {
       personId,
       personType,
       email,
-      token,
       expiresAt: new Date(expiresAtUtc),
     };
 
-    // Store token and user data
-    localStorage.setItem(AUTH_TOKEN_KEY, token);
-    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(authUser));
-
-    // Update store
-    useAuthStore.setState({ user: authUser, isAuthenticated: true });
+    setAuthenticatedUser(authUser);
 
     return authUser;
   },
@@ -35,84 +33,37 @@ export const authService = {
   /**
    * Logout: clear token and user data
    */
-  logout(): void {
-    localStorage.removeItem(AUTH_TOKEN_KEY);
-    localStorage.removeItem(AUTH_USER_KEY);
-    useAuthStore.setState({ user: null, isAuthenticated: false });
+  async logout(): Promise<void> {
+    try {
+      await apiClient.post('/api/auth/logout');
+    } finally {
+      clearAuthState();
+    }
   },
 
   /**
-   * Get stored authentication token
-   */
-  getToken(): string | null {
-    return localStorage.getItem(AUTH_TOKEN_KEY);
-  },
-
-  /**
-   * Get stored user data
-   */
-  getUser(): AuthUser | null {
-    const userJson = localStorage.getItem(AUTH_USER_KEY);
-    return userJson ? JSON.parse(userJson) : null;
-  },
-
-  /**
-   * Check if token is expired
-   */
-  isTokenExpired(): boolean {
-    const user = this.getUser();
-    if (!user) return true;
-
-    const now = new Date();
-    return now >= new Date(user.expiresAt);
-  },
-
-  /**
-   * Check if user is authenticated (token exists and not expired)
+   * Check if user is authenticated in current store state
    */
   isAuthenticated(): boolean {
-    const token = this.getToken();
-    if (!token) return false;
-
-    return !this.isTokenExpired();
+    return useAuthStore.getState().isAuthenticated;
   },
 
   /**
-   * Restore auth state from localStorage
+   * Restore auth state from secure cookie-backed session
    */
   async restoreAuth(): Promise<AuthUser | null> {
-    const user = this.getUser();
-
-    if (!user || this.isTokenExpired()) {
-      this.logout();
-      return null;
-    }
-
     try {
       const response = await apiClient.get<ValidateTokenResponse>('/api/auth/validate');
       const validatedUser: AuthUser = {
-        ...user,
         personId: response.data.personId,
         personType: response.data.personType,
         email: response.data.email,
       };
 
-      localStorage.setItem(AUTH_USER_KEY, JSON.stringify(validatedUser));
-      useAuthStore.setState({ user: validatedUser, isAuthenticated: true });
+      setAuthenticatedUser(validatedUser);
       return validatedUser;
     } catch {
-      this.logout();
-      return null;
-    }
-  },
-
-  /**
-   * Decode JWT payload (without verification)
-   */
-  decodeToken(token: string): Record<string, unknown> | null {
-    try {
-      return jwtDecode(token);
-    } catch {
+      clearAuthState();
       return null;
     }
   },

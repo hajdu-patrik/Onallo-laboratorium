@@ -27,6 +27,7 @@ public static partial class AuthEndpoints
      */
     private static async Task<IResult> LoginAsync(
         LoginRequest request,
+        HttpContext httpContext,
         UserManager<IdentityUser> userManager,
         SignInManager<IdentityUser> signInManager,
         AutoServiceDbContext db,
@@ -39,16 +40,45 @@ public static partial class AuthEndpoints
             return Results.ValidationProblem(validationErrors);
         }
 
-        var email = NormalizeOptional(request.Email);
-        var phoneNumber = NormalizeOptional(request.PhoneNumber);
+        string? email = null;
+        string? phoneNumber = null;
+
+        var rawEmail = NormalizeOptional(request.Email);
+        var rawPhoneNumber = NormalizeOptional(request.PhoneNumber);
+
+        if (rawEmail is not null && rawEmail.Contains('@'))
+        {
+            if (!TryNormalizeEmail(rawEmail, out var normalizedEmail))
+            {
+                return Results.ValidationProblem(new Dictionary<string, string[]>
+                {
+                    [nameof(request.Email)] = ["Email must be a valid email address."]
+                });
+            }
+
+            email = normalizedEmail;
+        }
 
         // Backward compatibility: if "email" is provided without '@', treat it as a phone login identifier.
         if (phoneNumber is null &&
-            email is not null &&
-            !email.Contains('@'))
+            rawPhoneNumber is null &&
+            rawEmail is not null &&
+            !rawEmail.Contains('@', StringComparison.Ordinal))
         {
-            phoneNumber = email;
-            email = null;
+            rawPhoneNumber = rawEmail;
+        }
+
+        if (rawPhoneNumber is not null)
+        {
+            if (!TryNormalizeHungarianPhoneNumber(rawPhoneNumber, out var normalizedPhoneNumber))
+            {
+                return Results.ValidationProblem(new Dictionary<string, string[]>
+                {
+                    [nameof(request.PhoneNumber)] = ["Phone number must be a valid Hungarian number."]
+                });
+            }
+
+            phoneNumber = normalizedPhoneNumber;
         }
 
         IdentityUser? identityUser = null;
@@ -59,8 +89,9 @@ public static partial class AuthEndpoints
         }
         else if (phoneNumber is not null)
         {
+            var phoneLookupCandidates = BuildHungarianPhoneLookupCandidates(phoneNumber);
             identityUser = await userManager.Users
-                .FirstOrDefaultAsync(x => x.PhoneNumber == phoneNumber, cancellationToken);
+                .FirstOrDefaultAsync(x => x.PhoneNumber != null && phoneLookupCandidates.Contains(x.PhoneNumber.Trim()), cancellationToken);
         }
 
         if (identityUser is null)
@@ -95,21 +126,48 @@ public static partial class AuthEndpoints
                 statusCode: StatusCodes.Status401Unauthorized);
         }
 
-        var person = await db.People
+        var mechanic = await db.Mechanics
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.IdentityUserId == identityUser.Id, cancellationToken);
 
-        if (person is null)
+        if (mechanic is null)
         {
             return Results.Problem(
                 detail: "The linked domain user record was not found.",
                 statusCode: StatusCodes.Status500InternalServerError);
         }
 
-        var expiresAtUtc = DateTime.UtcNow.AddMinutes(10);
-        var token = CreateJwtToken(identityUser, person, configuration, expiresAtUtc);
+        var nowUtc = DateTime.UtcNow;
+        var accessTokenTtl = TimeSpan.FromMinutes(10);
+        var refreshTokenTtl = TimeSpan.FromDays(7);
+        var accessTokenExpiresAtUtc = nowUtc.Add(accessTokenTtl);
+        var refreshTokenExpiresAtUtc = nowUtc.Add(refreshTokenTtl);
 
-        return Results.Ok(new LoginResponse(token, expiresAtUtc, person.Id, GetPersonType(person), identityUser.Email ?? person.Email));
+        var accessToken = CreateJwtToken(identityUser, mechanic, configuration, accessTokenExpiresAtUtc);
+        var refreshTokenValue = GenerateRefreshTokenValue();
+        var refreshTokenHash = HashRefreshToken(refreshTokenValue);
+
+        db.RefreshTokens.Add(new RefreshToken(
+            mechanic.Id,
+            refreshTokenHash,
+            nowUtc,
+            refreshTokenExpiresAtUtc,
+            httpContext.Connection.RemoteIpAddress?.ToString(),
+            httpContext.Request.Headers.UserAgent.ToString()));
+
+        await db.SaveChangesAsync(cancellationToken);
+
+        httpContext.Response.Cookies.Append(
+            AuthCookieNames.AccessToken,
+            accessToken,
+            BuildAccessTokenCookieOptions(accessTokenTtl));
+
+        httpContext.Response.Cookies.Append(
+            AuthCookieNames.RefreshToken,
+            refreshTokenValue,
+            BuildRefreshTokenCookieOptions(refreshTokenTtl));
+
+        return Results.Ok(new LoginResponse(accessTokenExpiresAtUtc, mechanic.Id, GetPersonType(mechanic), identityUser.Email ?? mechanic.Email));
     }
 
     /**

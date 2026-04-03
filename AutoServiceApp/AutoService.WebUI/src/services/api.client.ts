@@ -1,12 +1,22 @@
 import axios from 'axios';
 import type { AxiosError, AxiosInstance } from 'axios';
+import { useAuthStore } from '../store/auth.store';
+import type { RefreshResponse } from '../types/types';
 
 const API_URL = import.meta.env.VITE_API_URL;
 const LOGIN_PATH = '/api/auth/login';
+const REFRESH_PATH = '/api/auth/refresh';
+const LOGOUT_PATH = '/api/auth/logout';
 
 if (!API_URL) {
   throw new Error('VITE_API_URL is not configured. Set it via AppHost or .env.development.');
 }
+
+type RetryableRequestConfig = NonNullable<AxiosError['config']> & {
+  _retry?: boolean;
+};
+
+let refreshPromise: Promise<void> | null = null;
 
 function redactLoginPassword(error: AxiosError): void {
   const requestUrl = error.config?.url ?? '';
@@ -44,26 +54,47 @@ function redactLoginPassword(error: AxiosError): void {
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: API_URL,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Interceptor: attach JWT token to all requests
-apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('auth_token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
 // Interceptor: redact login password from Axios error config data before propagation/logging.
 apiClient.interceptors.response.use(
   (response) => response,
-  (error: AxiosError) => {
+  async (error: AxiosError) => {
     redactLoginPassword(error);
-    return Promise.reject(error);
+
+    const originalRequest = error.config as RetryableRequestConfig | undefined;
+    const requestUrl = originalRequest?.url ?? '';
+    const responseStatus = error.response?.status;
+    const isAuthExcludedPath =
+      requestUrl.includes(LOGIN_PATH) ||
+      requestUrl.includes(REFRESH_PATH) ||
+      requestUrl.includes(LOGOUT_PATH);
+
+    if (responseStatus !== 401 || !originalRequest || originalRequest._retry || isAuthExcludedPath) {
+      throw error;
+    }
+
+    originalRequest._retry = true;
+
+    try {
+      refreshPromise ??= apiClient
+        .post<RefreshResponse>(REFRESH_PATH)
+        .then(() => undefined)
+        .finally(() => {
+          refreshPromise = null;
+        });
+
+      await refreshPromise;
+      return apiClient(originalRequest);
+    } catch {
+      useAuthStore.getState().clearAuth();
+    }
+
+    throw error;
   }
 );
 

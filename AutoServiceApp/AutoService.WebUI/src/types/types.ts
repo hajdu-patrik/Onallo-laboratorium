@@ -9,11 +9,14 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
-  token: string;
   expiresAtUtc: string;
   personId: number;
   personType: string;
   email: string;
+}
+
+export interface RefreshResponse {
+  expiresAtUtc: string;
 }
 
 export interface ValidateTokenResponse {
@@ -26,8 +29,7 @@ export interface AuthUser {
   personId: number;
   personType: string;
   email: string;
-  token: string;
-  expiresAt: Date;
+  expiresAt?: Date;
 }
 
 export interface JwtPayload {
