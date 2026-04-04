@@ -47,8 +47,21 @@ description: "Use when editing backend API, auth, EF Core model, migrations, and
 - `POST /api/auth/logout` – Revokes refresh token session, denylists current JWT `jti`, clears auth cookies.
 - `GET /api/auth/validate` – Returns person linkage data for valid authenticated session.
 - `POST /api/auth/login` accepts normalized email/phone identifier input and supports backward-compatible phone-in-email field fallback.
-- `POST /api/auth/login` failure semantics: generic `401 invalid_credentials` for unknown/wrong credentials, `429` for lockout/rate-limit, `500` when linked domain record is missing.
-- No Customer, Vehicle, or Appointment CRUD endpoints currently implemented.
+- `POST /api/auth/login` failure semantics: generic `401 invalid_credentials` for unknown/wrong credentials, `403 mechanic_only_login` when an existing customer email/phone is used, `429` for lockout/rate-limit, `500` when linked domain record is missing.
+
+### Appointment Endpoints (`/api/appointments`) — all require authorization
+
+- `GET /api/appointments?year=&month=` — List appointments for a given month (defaults to current month if omitted; year: 2000-2100, month: 1-12).
+- `GET /api/appointments/today` — List today's UTC-range appointments.
+- `PUT /api/appointments/{id}/claim` — Current mechanic (from JWT `person_id`) claims an unassigned appointment. Returns 409 if already claimed, 422 if cancelled.
+- `PUT /api/appointments/{id}/status` — Update appointment status (requesting mechanic must be assigned). Validates status enum, returns 403 if not assigned.
+- Appointment DTOs: `AppointmentDto`, `VehicleDto`, `CustomerSummaryDto`, `MechanicSummaryDto`, `UpdateStatusRequest`.
+- Endpoint files follow partial-class pattern in `Appointments/` folder (mirroring `Auth/` structure).
+
+## API Documentation
+
+- OpenAPI spec: `GET /openapi/v1.json` (Development only, via `Microsoft.AspNetCore.OpenApi`).
+- Interactive docs: Scalar API Reference at `/scalar/v1` (Development only, via `Scalar.AspNetCore`).
 
 ## Configuration
 

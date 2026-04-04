@@ -7,9 +7,17 @@
 ![Aspire](https://img.shields.io/badge/Orchestration-.NET_Aspire-512BD4?style=flat&logo=dotnet&logoColor=white)
 ![EF Core](https://img.shields.io/badge/ORM-EF_Core-512BD4?style=flat&logo=nuget&logoColor=white)
 
-# AutoService - Időpontfoglaló és Erőforrás-kezelő Rendszer
+# ARSM - Appointment and Resource Scheduling Management
 
-Az AutoService egy full-stack alkalmazás, amely ASP.NET Core Web API-t használ backendként, React + TypeScript-et frontendként, valamint PostgreSQL-t adatbázisként. A rendszer egy .NET Aspire orkesztrációs rétegen fut, ami egyszerűsíti a helyi fejlesztést, az observability-t és a konténeres működést.
+Az **ARSM** egy szerelőknek készült műhelykezelő eszköz autószerviz vállalkozások számára. Segíti a szerelőket a napi javítási ütemtervek áttekintésében, időpontok igénylésében és a munkák állapotának valós idejű követésében egy letisztult, reszponzív felületen.
+
+**Használd az ARSM-et, ha:**
+- Egy pillantással szeretnéd áttekinteni és kezelni a javítási időpontokat
+- Szabad időpontokat szeretnél igényelni és valós időben frissíteni az állapotukat
+- Havi naptárnézetben szeretnéd böngészni az összes ütemezett munkát
+- Szerelői munkaterheléseket szeretnél koordinálni a műhelyen belül
+
+Full-stack alkalmazásként épült ASP.NET Core Web API (backend), React + TypeScript (frontend) és PostgreSQL (adatbázis) technológiákkal, .NET Aspire orkesztrációval az egyszerű helyi fejlesztésért.
 
 ---
 
@@ -27,12 +35,14 @@ A részletes agent policy külön skill és prompt fájlokba van szervezve.
 - `/mcp-context-policy` → MCP szerverhasználat és Context Mode interakciós policy.
 - `/config-driven-endpoints` → Fix, konfiguráció-alapú port/URL policy, hardcode fallback címek nélkül.
 - `/ef-migration` → EF migrációs workflow és hibaelhárítás.
+- `/docs-sync` → Dokumentáció szinkronizációs policy és workflow.
 
 Skill források:
 
 - `.github/skills/autoservice-mcp-context-policy/SKILL.md`
 - `.github/skills/autoservice-config-driven-endpoints/SKILL.md`
 - `.github/skills/autoservice-ef-migration/SKILL.md`
+- `.github/skills/autoservice-docs-sync/SKILL.md`
 
 ---
 
@@ -40,8 +50,9 @@ Skill források:
 
 - A rendszer ASP.NET Core Identity + JWT alapon működik, backend által kezelt HttpOnly cookie sessionnel.
 - Az access és refresh tokenek biztonságos HttpOnly cookie-kban vannak, refresh token rotációval és szerveroldali (hash-elt) tárolással.
-- Jelenlegi auth endpointok: `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/refresh`, `POST /api/auth/logout`, `GET /api/auth/validate`.
-- A dashboard hozzáférés szerelői fiókokra van tervezve.
+- Auth endpointok: `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/refresh`, `POST /api/auth/logout`, `GET /api/auth/validate`.
+- Időpont endpointok: `GET /api/appointments`, `GET /api/appointments/today`, `PUT /api/appointments/{id}/claim`, `PUT /api/appointments/{id}/status`.
+- A dashboard hozzáférés szerelői fiókokra van tervezve. Bejelentkezés után a szerelők egy Ütemező oldalra kerülnek, amely a napi időpontokat (Tervező Tér) és egy havi naptárnézetet tartalmaz.
 - Részletes biztonsági és üzemeltetési információk szándékosan nem publikusak ebben a README-ben.
 
 ---

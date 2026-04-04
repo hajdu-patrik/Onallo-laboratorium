@@ -1,6 +1,22 @@
 import { apiClient } from './api.client';
-import type { LoginRequest, LoginResponse, AuthUser, ValidateTokenResponse } from '../types/types';
+import type { LoginRequest, LoginResponse, AuthUser, ValidateTokenResponse } from '../types/login.types';
 import { useAuthStore } from '../store/auth.store';
+
+const SESSION_HINT_KEY = 'autoservice-session-hint';
+
+let restorePromise: Promise<AuthUser | null> | null = null;
+
+function setSessionHint(): void {
+  localStorage.setItem(SESSION_HINT_KEY, '1');
+}
+
+function clearSessionHint(): void {
+  localStorage.removeItem(SESSION_HINT_KEY);
+}
+
+function hasSessionHint(): boolean {
+  return localStorage.getItem(SESSION_HINT_KEY) === '1';
+}
 
 function setAuthenticatedUser(user: AuthUser): void {
   useAuthStore.setState({ user, isAuthenticated: true, error: null });
@@ -26,6 +42,7 @@ export const authService = {
     };
 
     setAuthenticatedUser(authUser);
+    setSessionHint();
 
     return authUser;
   },
@@ -37,6 +54,7 @@ export const authService = {
     try {
       await apiClient.post('/api/auth/logout');
     } finally {
+      clearSessionHint();
       clearAuthState();
     }
   },
@@ -52,19 +70,45 @@ export const authService = {
    * Restore auth state from secure cookie-backed session
    */
   async restoreAuth(): Promise<AuthUser | null> {
-    try {
-      const response = await apiClient.get<ValidateTokenResponse>('/api/auth/validate');
-      const validatedUser: AuthUser = {
-        personId: response.data.personId,
-        personType: response.data.personType,
-        email: response.data.email,
-      };
-
-      setAuthenticatedUser(validatedUser);
-      return validatedUser;
-    } catch {
+    if (!hasSessionHint()) {
       clearAuthState();
       return null;
     }
+
+    if (restorePromise) {
+      return restorePromise;
+    }
+
+    restorePromise = (async () => {
+      try {
+        const response = await apiClient.get<ValidateTokenResponse>('/api/auth/validate', {
+          validateStatus: (status) => status === 200 || status === 401,
+        });
+
+        if (response.status === 401) {
+          clearSessionHint();
+          clearAuthState();
+          return null;
+        }
+
+        const validatedUser: AuthUser = {
+          personId: response.data.personId,
+          personType: response.data.personType,
+          email: response.data.email,
+        };
+
+        setAuthenticatedUser(validatedUser);
+        setSessionHint();
+        return validatedUser;
+      } catch {
+        clearSessionHint();
+        clearAuthState();
+        return null;
+      } finally {
+        restorePromise = null;
+      }
+    })();
+
+    return restorePromise;
   },
 };

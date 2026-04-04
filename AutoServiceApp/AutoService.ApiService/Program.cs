@@ -1,3 +1,4 @@
+using AutoService.ApiService.Appointments;
 using AutoService.ApiService.Auth;
 using AutoService.ApiService.Data;
 using AutoService.ApiService.DataInitialization;
@@ -9,6 +10,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text;
+using Scalar.AspNetCore;
 using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -186,6 +188,7 @@ await app.EnsureSeededAsync();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.MapScalarApiReference();
 }
 else
 {
@@ -234,6 +237,7 @@ app.UseAuthorization();
 
 // Endpoint mapping: maps controller routes, then auth endpoints.
 app.MapAuthEndpoints();
+app.MapAppointmentEndpoints();
 
 // Endpoint mapping section.
 app.Run();

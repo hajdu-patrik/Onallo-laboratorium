@@ -85,10 +85,37 @@ public static partial class AuthEndpoints
 
         if (email is not null)
         {
+            var customerExists = await db.Customers
+                .AsNoTracking()
+                .AnyAsync(x => x.Email == email, cancellationToken);
+
+            if (customerExists)
+            {
+                return Results.Problem(
+                    title: "mechanic_only_login",
+                    detail: "Only mechanics can log in to this portal.",
+                    statusCode: StatusCodes.Status403Forbidden);
+            }
+
             identityUser = await userManager.FindByEmailAsync(email);
         }
         else if (phoneNumber is not null)
         {
+            var customerPhoneLookupCandidates = BuildHungarianPhoneLookupCandidates(phoneNumber);
+            var customerExists = await db.Customers
+                .AsNoTracking()
+                .AnyAsync(
+                    x => x.PhoneNumber != null && customerPhoneLookupCandidates.Contains(x.PhoneNumber.Trim()),
+                    cancellationToken);
+
+            if (customerExists)
+            {
+                return Results.Problem(
+                    title: "mechanic_only_login",
+                    detail: "Only mechanics can log in to this portal.",
+                    statusCode: StatusCodes.Status403Forbidden);
+            }
+
             var phoneLookupCandidates = BuildHungarianPhoneLookupCandidates(phoneNumber);
             identityUser = await userManager.Users
                 .FirstOrDefaultAsync(x => x.PhoneNumber != null && phoneLookupCandidates.Contains(x.PhoneNumber.Trim()), cancellationToken);

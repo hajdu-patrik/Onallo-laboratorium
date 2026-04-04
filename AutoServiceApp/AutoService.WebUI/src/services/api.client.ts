@@ -1,12 +1,13 @@
 import axios from 'axios';
 import type { AxiosError, AxiosInstance } from 'axios';
 import { useAuthStore } from '../store/auth.store';
-import type { RefreshResponse } from '../types/types';
+import type { RefreshResponse } from '../types/login.types';
 
 const API_URL = import.meta.env.VITE_API_URL;
 const LOGIN_PATH = '/api/auth/login';
 const REFRESH_PATH = '/api/auth/refresh';
 const LOGOUT_PATH = '/api/auth/logout';
+const VALIDATE_PATH = '/api/auth/validate';
 
 if (!API_URL) {
   throw new Error('VITE_API_URL is not configured. Set it via AppHost or .env.development.');
@@ -72,7 +73,8 @@ apiClient.interceptors.response.use(
     const isAuthExcludedPath =
       requestUrl.includes(LOGIN_PATH) ||
       requestUrl.includes(REFRESH_PATH) ||
-      requestUrl.includes(LOGOUT_PATH);
+      requestUrl.includes(LOGOUT_PATH) ||
+      requestUrl.includes(VALIDATE_PATH);
 
     if (responseStatus !== 401 || !originalRequest || originalRequest._retry || isAuthExcludedPath) {
       throw error;

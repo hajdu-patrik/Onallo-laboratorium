@@ -4,21 +4,23 @@ import { useAuthStore } from './store/auth.store';
 import { authService } from './services/auth.service';
 import { LoadingPage } from './pages/LoadingPage';
 import { Login } from './pages/Login/page';
-import { Dashboard } from './pages/Dashboard/page';
+import { SchedulerPage } from './pages/Scheduler/page';
+import { PlaceholderPage } from './pages/Placeholder/page';
 import { NotFound } from './pages/NotFound';
 import { PrivateRoute } from './router/PrivateRoute';
-import { Layout } from './components/layout/Layout';
+import { PublicOnlyRoute } from './router/PublicOnlyRoute';
+import { SidebarLayout } from './components/layout/SidebarLayout';
 import './utils/i18n';
 
 function App() {
   const setIsAuthenticated = useAuthStore((state) => state.setIsAuthenticated);
   const setIsLoading = useAuthStore((state) => state.setIsLoading);
 
-  const dashboardElement = (
+  const schedulerElement = (
     <PrivateRoute>
-      <Layout>
-        <Dashboard />
-      </Layout>
+      <SidebarLayout>
+        <SchedulerPage />
+      </SidebarLayout>
     </PrivateRoute>
   );
 
@@ -56,11 +58,24 @@ function App() {
       <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Routes>
           {/* Login Route */}
-          <Route path="/login" element={<Login />} />
+          <Route
+            path="/login"
+            element={(
+              <PublicOnlyRoute>
+                <Login />
+              </PublicOnlyRoute>
+            )}
+          />
 
-          {/* Dashboard Route (Protected) */}
-          <Route path="/" element={dashboardElement} />
-          <Route path="/dashboard" element={dashboardElement} />
+          {/* Scheduler Route (Protected) */}
+          <Route path="/" element={schedulerElement} />
+          <Route path="/scheduler" element={schedulerElement} />
+          <Route path="/dashboard" element={schedulerElement} />
+
+          {/* Placeholder Routes (Protected) */}
+          <Route path="/tools" element={<PrivateRoute><SidebarLayout><PlaceholderPage title="tools" /></SidebarLayout></PrivateRoute>} />
+          <Route path="/inventory" element={<PrivateRoute><SidebarLayout><PlaceholderPage title="inventory" /></SidebarLayout></PrivateRoute>} />
+          <Route path="/settings" element={<PrivateRoute><SidebarLayout><PlaceholderPage title="settings" /></SidebarLayout></PrivateRoute>} />
 
           {/* 404 Not Found */}
           <Route path="*" element={<NotFound />} />

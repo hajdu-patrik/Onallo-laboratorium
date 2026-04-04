@@ -11,6 +11,7 @@ interface ApiErrorPayload {
 
 export type LoginError =
   | { key: 'login.invalidCredentials' }
+  | { key: 'login.mechanicOnly' }
   | { key: 'login.identifierNotFound' }
   | { key: 'login.serverError500' }
   | { key: 'login.databaseUnavailable' }
@@ -21,7 +22,9 @@ export type LoginError =
 export type ParsedIdentifier =
   | { kind: 'email'; email: string }
   | { kind: 'phone'; phoneNumber: string }
-  | { kind: 'invalid' };
+  | { kind: 'invalid'; reason: 'format' | 'wrong_method_email' | 'wrong_method_phone' };
+
+export type LoginMethod = 'email' | 'phone';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const ALLOWED_MOBILE_PREFIXES = new Set(['20', '21', '30', '31', '50', '70']);
@@ -65,28 +68,37 @@ function isValidHungarianNationalNumber(nationalDigits: string): boolean {
   return false;
 }
 
-export function parseIdentifier(value: string): ParsedIdentifier {
-  const trimmedValue = value.trim();
+function looksLikeHungarianPhone(value: string): boolean {
+  const compactValue = value.replaceAll(/\D/g, '');
 
-  if (!trimmedValue) {
-    return { kind: 'invalid' };
+  return compactValue.startsWith('36') ||
+    compactValue.startsWith('06') ||
+    compactValue.startsWith('0036');
+}
+
+function parseEmailIdentifier(value: string): ParsedIdentifier {
+  if (!value.includes('@') && looksLikeHungarianPhone(value)) {
+    return { kind: 'invalid', reason: 'wrong_method_phone' };
   }
 
-  if (trimmedValue.includes('@')) {
-    if (!EMAIL_REGEX.test(trimmedValue)) {
-      return { kind: 'invalid' };
-    }
-
-    return {
-      kind: 'email',
-      email: trimmedValue.toLowerCase(),
-    };
+  if (!EMAIL_REGEX.test(value)) {
+    return { kind: 'invalid', reason: 'format' };
   }
 
-  const compactValue = trimmedValue.replaceAll(/\D/g, '');
+  return {
+    kind: 'email',
+    email: value.toLowerCase(),
+  };
+}
 
+function parsePhoneIdentifier(value: string): ParsedIdentifier {
+  if (value.includes('@')) {
+    return { kind: 'invalid', reason: 'wrong_method_email' };
+  }
+
+  const compactValue = value.replaceAll(/\D/g, '');
   if (!compactValue) {
-    return { kind: 'invalid' };
+    return { kind: 'invalid', reason: 'format' };
   }
 
   let normalizedValue = compactValue;
@@ -100,18 +112,30 @@ export function parseIdentifier(value: string): ParsedIdentifier {
   }
 
   if (!normalizedValue.startsWith('36')) {
-    return { kind: 'invalid' };
+    return { kind: 'invalid', reason: 'format' };
   }
 
   const nationalDigits = normalizedValue.slice(2);
   if (!isValidHungarianNationalNumber(nationalDigits)) {
-    return { kind: 'invalid' };
+    return { kind: 'invalid', reason: 'format' };
   }
 
   return {
     kind: 'phone',
     phoneNumber: `36${nationalDigits}`,
   };
+}
+
+export function parseIdentifierByMethod(value: string, method: LoginMethod): ParsedIdentifier {
+  const trimmedValue = value.trim();
+
+  if (!trimmedValue) {
+    return { kind: 'invalid', reason: 'format' };
+  }
+
+  return method === 'email'
+    ? parseEmailIdentifier(trimmedValue)
+    : parsePhoneIdentifier(trimmedValue);
 }
 
 function parseRetryAfterSeconds(err: AxiosError<ApiErrorPayload>): number | null {
@@ -153,29 +177,35 @@ function toAttemptsExceededError(retryAfterSeconds: number | null): LoginError {
   };
 }
 
-export function resolveLoginError(err: unknown): LoginError {
-  const axiosError = err as AxiosError<ApiErrorPayload>;
-  const status = axiosError?.response?.status;
-  const responseData = axiosError?.response?.data;
+function includesAny(haystack: string, needles: readonly string[]): boolean {
+  return needles.some((needle) => haystack.includes(needle));
+}
 
-  const normalizedErrorText = [
+function buildNormalizedErrorText(
+  responseData: ApiErrorPayload | undefined,
+  message: string | undefined,
+): string {
+  return [
     responseData?.code,
     responseData?.title,
     responseData?.detail,
     responseData?.message,
     responseData?.error,
-    axiosError?.message,
+    message,
   ]
     .filter(Boolean)
     .join(' ')
     .toLowerCase();
+}
 
-  if (
-    status === 429 ||
-    normalizedErrorText.includes('lockout') ||
-    normalizedErrorText.includes('too many attempts') ||
-    normalizedErrorText.includes('rate limit')
-  ) {
+export function resolveLoginError(err: unknown): LoginError {
+  const axiosError = err as AxiosError<ApiErrorPayload>;
+  const status = axiosError?.response?.status;
+  const responseData = axiosError?.response?.data;
+
+  const normalizedErrorText = buildNormalizedErrorText(responseData, axiosError?.message);
+
+  if (status === 429 || includesAny(normalizedErrorText, ['lockout', 'too many attempts', 'rate limit'])) {
     return toAttemptsExceededError(parseRetryAfterSeconds(axiosError));
   }
 
@@ -183,26 +213,16 @@ export function resolveLoginError(err: unknown): LoginError {
     return { key: 'login.serverError500' };
   }
 
-  if (
-    normalizedErrorText.includes('database') ||
-    normalizedErrorText.includes('db') ||
-    normalizedErrorText.includes('npgsql') ||
-    normalizedErrorText.includes('connection') ||
-    normalizedErrorText.includes('socket') ||
-    normalizedErrorText.includes('econnrefused') ||
-    normalizedErrorText.includes('network error') ||
-    normalizedErrorText.includes('failed to fetch')
-  ) {
+  if (includesAny(normalizedErrorText, ['database', 'db', 'npgsql', 'connection', 'socket', 'econnrefused', 'network error', 'failed to fetch'])) {
     return { key: 'login.databaseUnavailable' };
   }
 
-  if (
-    status === 404 ||
-    normalizedErrorText.includes('identifier_not_found') ||
-    normalizedErrorText.includes('does not exist') ||
-    normalizedErrorText.includes('not found')
-  ) {
+  if (status === 404 || includesAny(normalizedErrorText, ['identifier_not_found', 'does not exist', 'not found'])) {
     return { key: 'login.identifierNotFound' };
+  }
+
+  if (status === 403 || includesAny(normalizedErrorText, ['mechanic_only_login', 'only mechanics'])) {
+    return { key: 'login.mechanicOnly' };
   }
 
   if (status === 401) {

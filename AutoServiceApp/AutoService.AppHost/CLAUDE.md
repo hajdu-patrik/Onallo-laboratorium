@@ -19,7 +19,12 @@
 - Wire with reference to the API service.
 - Inject `VITE_API_URL` from `apiService.GetEndpoint("https")` — never hardcode.
 - WebUI port source: `appsettings.json` → `Ports:WebUi`, passed as `PORT` env var.
+- WebUI runs over HTTPS (`WithHttpsEndpoint`) with Vite's `vite-plugin-mkcert`.
 - Enable external HTTP endpoints for local development.
+
+## Secrets & Parameters
+- `postgres-password` — PostgreSQL server password (secret parameter, stored in user secrets).
+- `jwt-secret` — JWT signing secret injected into API service as `JwtSettings__Secret` (secret parameter).
 
 ## Avoid
 - Hardcoding URLs, ports, or credentials in code — use env vars and Aspire wiring.

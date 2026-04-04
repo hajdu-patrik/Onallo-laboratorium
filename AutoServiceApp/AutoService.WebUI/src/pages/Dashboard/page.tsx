@@ -9,9 +9,9 @@ const DashboardComponent = memo(function Dashboard() {
   return (
     <div className="space-y-8">
       {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-purple-500 to-purple-600 dark:from-purple-600 dark:to-purple-700 rounded-2xl p-8 text-white shadow-lg">
+      <div className="bg-gradient-to-r from-[#C9B3FF] to-[#BFA6F7] dark:from-[#7A66C7] dark:to-[#8A75D6] rounded-2xl p-8 text-[#2C2440] dark:text-[#F5F2FF] shadow-lg">
         <h1 className="text-4xl font-bold mb-2">{t('dashboard.welcome')}, {user?.email}!</h1>
-        <p className="text-purple-100">
+        <p className="text-[#5E5672] dark:text-[#CFC5EA]">
           {t('dashboard.title')} - {user?.personType}
         </p>
       </div>
@@ -19,51 +19,51 @@ const DashboardComponent = memo(function Dashboard() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Stat Card 1 */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-[#F6F4FB] dark:bg-[#13131B] rounded-xl p-6 border border-[#D8D2E9] dark:border-[#3A3154] shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-slate-600 dark:text-slate-400 text-sm font-medium">
+              <p className="text-[#5E5672] dark:text-[#CFC5EA] text-sm font-medium">
                 {t('dashboard.appointments')}
               </p>
-              <p className="text-3xl font-bold text-purple-600 dark:text-purple-400 mt-2">
+              <p className="text-3xl font-bold text-[#2C2440] dark:text-[#EDE8FA] mt-2">
                 0
               </p>
             </div>
-            <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center text-xl">
+            <div className="w-12 h-12 bg-[#EFEBFA] dark:bg-[#241F33] rounded-lg flex items-center justify-center text-xl">
               📅
             </div>
           </div>
         </div>
 
         {/* Stat Card 2 */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-[#F6F4FB] dark:bg-[#13131B] rounded-xl p-6 border border-[#D8D2E9] dark:border-[#3A3154] shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-slate-600 dark:text-slate-400 text-sm font-medium">
+              <p className="text-[#5E5672] dark:text-[#CFC5EA] text-sm font-medium">
                 {t('dashboard.vehicles')}
               </p>
-              <p className="text-3xl font-bold text-purple-600 dark:text-purple-400 mt-2">
+              <p className="text-3xl font-bold text-[#2C2440] dark:text-[#EDE8FA] mt-2">
                 0
               </p>
             </div>
-            <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center text-xl">
+            <div className="w-12 h-12 bg-[#EFEBFA] dark:bg-[#241F33] rounded-lg flex items-center justify-center text-xl">
               🚗
             </div>
           </div>
         </div>
 
         {/* Stat Card 3 */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-[#F6F4FB] dark:bg-[#13131B] rounded-xl p-6 border border-[#D8D2E9] dark:border-[#3A3154] shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-slate-600 dark:text-slate-400 text-sm font-medium">
+              <p className="text-[#5E5672] dark:text-[#CFC5EA] text-sm font-medium">
                 {t('dashboard.customers')}
               </p>
-              <p className="text-3xl font-bold text-purple-600 dark:text-purple-400 mt-2">
+              <p className="text-3xl font-bold text-[#2C2440] dark:text-[#EDE8FA] mt-2">
                 0
               </p>
             </div>
-            <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center text-xl">
+            <div className="w-12 h-12 bg-[#EFEBFA] dark:bg-[#241F33] rounded-lg flex items-center justify-center text-xl">
               👥
             </div>
           </div>
@@ -73,34 +73,34 @@ const DashboardComponent = memo(function Dashboard() {
       {/* Main Content Area */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Large Content Area */}
-        <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">
+        <div className="lg:col-span-2 bg-[#F6F4FB] dark:bg-[#13131B] rounded-xl p-6 border border-[#D8D2E9] dark:border-[#3A3154] shadow-sm">
+          <h2 className="text-xl font-bold text-[#2C2440] dark:text-[#EDE8FA] mb-4">
             Legújabb tevékenységek
           </h2>
-          <div className="text-center py-12 text-slate-500 dark:text-slate-400">
+          <div className="text-center py-12 text-[#6A627F] dark:text-[#B9B0D3]">
             <p>Jelenleg nincsenek tevékenységek</p>
           </div>
         </div>
 
         {/* Sidebar */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
-          <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">
+        <div className="bg-[#F6F4FB] dark:bg-[#13131B] rounded-xl p-6 border border-[#D8D2E9] dark:border-[#3A3154] shadow-sm">
+          <h3 className="text-lg font-bold text-[#2C2440] dark:text-[#EDE8FA] mb-4">
             Profil Információk
           </h3>
           <div className="space-y-3 text-sm">
             <div>
-              <p className="text-slate-600 dark:text-slate-400">E-mail</p>
-              <p className="font-medium text-slate-900 dark:text-white">{user?.email}</p>
+              <p className="text-[#5E5672] dark:text-[#CFC5EA]">E-mail</p>
+              <p className="font-medium text-[#2C2440] dark:text-[#EDE8FA]">{user?.email}</p>
             </div>
             <div>
-              <p className="text-slate-600 dark:text-slate-400">Típus</p>
-              <p className="font-medium text-slate-900 dark:text-white capitalize">
+              <p className="text-[#5E5672] dark:text-[#CFC5EA]">Típus</p>
+              <p className="font-medium text-[#2C2440] dark:text-[#EDE8FA] capitalize">
                 {user?.personType}
               </p>
             </div>
             <div>
-              <p className="text-slate-600 dark:text-slate-400">ID</p>
-              <p className="font-medium text-slate-900 dark:text-white">{user?.personId}</p>
+              <p className="text-[#5E5672] dark:text-[#CFC5EA]">ID</p>
+              <p className="font-medium text-[#2C2440] dark:text-[#EDE8FA]">{user?.personId}</p>
             </div>
           </div>
         </div>

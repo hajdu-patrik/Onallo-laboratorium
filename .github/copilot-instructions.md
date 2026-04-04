@@ -1,9 +1,9 @@
 > **Architecture Notice:** This project uses both GitHub Copilot and Claude Code as the primary agentic AI tools. To maintain consistency across the workspace, ensure that any architectural rules or domain constraints updated in this file are also synchronized with the `CLAUDE.md` and `.claude/skills/` files.
 
-# AutoService Copilot Instructions (Project-Specific)
+# ARSM (AutoService) Copilot Instructions (Project-Specific)
 
 ## Goal
-This repository hosts the AutoService full-stack application.
+This repository hosts the **ARSM** (Appointment and Resource Scheduling Management) full-stack application — a mechanic-facing workshop management tool for auto service businesses.
 
 Prioritize maintainable, domain-safe, incremental changes that align with the existing architecture and folder layout.
 
@@ -25,6 +25,11 @@ Prioritize maintainable, domain-safe, incremental changes that align with the ex
 - For parallel work, prefer folder-level ownership during a work window (for example, one person on `ApiService/Auth`, another on `WebUI/src`).
 - Before pushing larger changes, sync in the group to avoid simultaneous edits on the same files.
 
+## Documentation Sync Rule (Mandatory)
+- After any change that affects API endpoints, EF migrations, middleware pipeline, WebUI pages/components/routes, dependencies (NuGet or npm), AppHost resource wiring, or configuration keys — run `/docs-sync` before considering the task complete.
+- This keeps all `CLAUDE.md` files and `.github/instructions/` files in sync with the actual code.
+- Trigger sections: endpoints, migrations, middleware order, pages, components, routes, stores, services, dependencies, config keys, AppHost resources, security settings (lockout, rate limits, token lifetimes).
+
 ## MCP and Hook Policy (Workspace)
 - Keep MCP server setup intentionally minimal and project-focused.
 - Primary servers for this repository:
@@ -44,6 +49,7 @@ Prioritize maintainable, domain-safe, incremental changes that align with the ex
 - Use `/mcp-context-policy` for MCP server interaction policy and Context Mode usage decisions.
 - Use `/config-driven-endpoints` for URL/port changes to enforce config-driven addressing and avoid hardcoded fallback endpoints.
 - Use `/ef-migration` for EF migration execution and troubleshooting.
+- Use `/docs-sync` to synchronize all CLAUDE.md and .github/instructions files with the actual codebase state after significant changes.
 - Keep README usage references concise; detailed policy/workflow logic belongs in skill files under `.github/skills/*/SKILL.md`.
 
 ## Configuration-First Addressing Rule
@@ -76,11 +82,13 @@ Prioritize maintainable, domain-safe, incremental changes that align with the ex
 - The EF Core provider is `Npgsql.EntityFrameworkCore.PostgreSQL`; use `options.UseNpgsql(...)` in `Program.cs`.
 - Keep model configuration centralized in `Data/AutoServiceDbContext.cs`.
 - Place new migrations in `Data/Migrations`.
-- Current migrations: `InitialCreate` + `AddIdentityAndIdentityUserId`.
+- Current migrations: `InitialCreate`, `AddIdentityAndIdentityUserId`, `AddRefreshTokensAndCookieAuth`.
 - `DemoDataInitializer.EnsureSeededAsync()` runs on startup: calls `MigrateAsync()` then seeds mechanics (with Identity accounts) and customers (plain records) when tables are empty.
+- Outside Development, seeding requires `DemoData:EnableSeeding=true` and `DemoData:MechanicPassword`.
 - Prefer async EF methods for I/O (`SaveChangesAsync`, `ToListAsync`, etc.).
 - Keep schema constraints and indexes aligned with domain invariants.
 - Use `ConnectionStrings:AutoServiceDb` as the canonical connection key.
+- Configuration keys: `ConnectionStrings:AutoServiceDb`, `JwtSettings:Secret` (min 32 bytes), `JwtSettings:Issuer`, `JwtSettings:Audience`, `Cors:AllowedOrigins`.
 - Never hardcode credentials in committed source code.
 - Prefer Aspire-injected configuration, environment variables, and gitignored local overrides.
 - Local standalone run (outside AppHost): provide the PostgreSQL connection string in `appsettings.Local.json` (gitignored) or via the `ConnectionStrings__AutoServiceDb` environment variable.
@@ -94,6 +102,7 @@ Prioritize maintainable, domain-safe, incremental changes that align with the ex
 - Only **mechanics** can register and log in; **customers are passive domain records** (vehicle owners, notification targets) with no login account and no `IdentityUserId`.
 - Keep registration logic transactional: create `IdentityUser` and linked `Mechanic` domain record together, linked by `People.IdentityUserId`.
 - Login/refresh/logout endpoints should verify credentials/session through Identity + persisted refresh tokens and maintain HttpOnly cookie auth state.
+- Auth cookies: access token in `autoservice_at`, refresh token in `autoservice_rt` (both HttpOnly, Secure, SameSite=Strict).
 - Keep JWT secrets out of committed config; use `appsettings.Local.json`, environment variables, or user secrets.
 - For local auth testing outside AppHost, keep `JwtSettings:Secret` in `appsettings.Local.json` (gitignored) or use the `JwtSettings__Secret` environment variable.
 - Use cancellation tokens for async flows where applicable.
@@ -107,8 +116,13 @@ Prioritize maintainable, domain-safe, incremental changes that align with the ex
 	- `POST /api/auth/refresh`
 	- `POST /api/auth/logout` (authorized)
 	- `GET /api/auth/validate` (authorized)
+	- `GET /api/appointments?year=&month=` (authorized) — list appointments for a month
+	- `GET /api/appointments/today` (authorized) — list today's appointments
+	- `PUT /api/appointments/{id}/claim` (authorized) — mechanic claims an appointment
+	- `PUT /api/appointments/{id}/status` (authorized) — update appointment status
 	- `GET /openapi/v1.json` in Development (`app.MapOpenApi()`)
-- No `Customer`, `Vehicle`, or `Appointment` CRUD endpoints are currently mapped.
+	- Scalar API Reference at `/scalar/v1` in Development (`app.MapScalarApiReference()`)
+- Appointment endpoints use DTOs (`AppointmentDto`, `VehicleDto`, `CustomerSummaryDto`, `MechanicSummaryDto`) and follow partial-class pattern in `Appointments/` folder.
 - Auth and login behavior currently implemented:
 	- registration is mechanic-only,
 	- login accepts email or phone number,
@@ -116,6 +130,7 @@ Prioritize maintainable, domain-safe, incremental changes that align with the ex
 	- Hungarian phone inputs accept common formats (`+36`, `36`, `06`, spaces/punctuation) and normalize to canonical national form with strict prefix/length rules (`361xxxxxxx`, `36(20|21|30|31|50|70)xxxxxxx`, and approved 2-digit geographic area prefixes),
 	- register rejects duplicate phone numbers even if input format differs,
 	- unknown/wrong credentials return generic `401` (`invalid_credentials`),
+	- existing customer email/phone identifiers return `403` (`mechanic_only_login`) because only mechanics can authenticate,
 	- lockout is enabled (`5` failed attempts, `15` minutes lockout),
 	- login rate limit is `10` requests per minute per client IP,
 	- temporary login ban window after rate-limit rejection is currently `3` minutes,
@@ -134,8 +149,8 @@ Prioritize maintainable, domain-safe, incremental changes that align with the ex
 - Security middleware currently active:
 	- `UseHttpsRedirection()` always,
 	- `UseHsts()` outside Development,
-	- `UseCors("WebUIPolicy")`,
-	- `UseRateLimiter()`, `UseAuthentication()`, `UseAuthorization()`.
+	- custom login ban middleware (3-minute IP cooldown),
+	- `UseRateLimiter()`, `UseCors("WebUIPolicy")`, `UseAuthentication()`, `UseAuthorization()`.
 - Seeding and credential safety:
 	- `DemoDataInitializer` runs migrations on startup,
 	- demo seeding outside Development requires `DemoData:EnableSeeding=true`,
@@ -143,8 +158,8 @@ Prioritize maintainable, domain-safe, incremental changes that align with the ex
 
 ## Current Known Gaps (As Of Current Code)
 - `AutoService.ApiService/Contracts` remains minimal and should be expanded as endpoint surface grows.
-- `Customer`, `Vehicle`, and `Appointment` CRUD endpoints are still not mapped.
-- Frontend currently covers login/dashboard/404 flows only; no domain CRUD UI yet.
+- `Customer` and `Vehicle` CRUD endpoints are still not mapped (Appointment read/claim/status endpoints now exist).
+- Frontend Scheduler page (planner + calendar) is implemented; other sidebar pages (Tools, Inventory, Settings) are placeholder stubs.
 - Token denylist is currently in-memory only; horizontal scale/multi-instance deployments need distributed denylist/session invalidation strategy.
 - `AutoService.ServiceDefaults` health endpoint extensions exist, but API does not currently call `MapDefaultEndpoints()`.
 - No dedicated unit/integration test project exists yet.
@@ -160,6 +175,8 @@ Prioritize maintainable, domain-safe, incremental changes that align with the ex
 - `AutoService.AppHost` is the default local entry point.
 - Wire dependencies using `WithReference(...)` and startup ordering with `WaitFor(...)` when needed.
 - Frontend must use `VITE_API_URL` provided by AppHost instead of hardcoded API endpoints.
+- WebUI runs over HTTPS (`WithHttpsEndpoint`) with Vite's `vite-plugin-mkcert`.
+- AppHost secret parameters: `postgres-password` (PostgreSQL), `jwt-secret` (injected as `JwtSettings__Secret`).
 - Keep infrastructure resource names stable and deterministic when adding new resources.
 
 ## Frontend Rules
@@ -169,6 +186,8 @@ Prioritize maintainable, domain-safe, incremental changes that align with the ex
 - Use pastel purple as the primary accent color for new UI work.
 - Ensure layouts are responsive on desktop and mobile.
 - Keep API access logic in `src/services` and keep components focused on UI/state.
+- Vite dev server runs over HTTPS via `vite-plugin-mkcert` (`server.https: true`).
+- Key dependencies: `react-router-dom`, `axios`, `zustand`, `i18next`, `react-i18next`, `tailwindcss`, `jwt-decode`.
 
 ## Code Change Policy for Copilot
 - Make minimal, task-focused changes; avoid broad refactors unless requested.

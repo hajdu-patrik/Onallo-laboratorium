@@ -6,10 +6,10 @@ interface ThemeLanguageControlsProps {
   readonly className?: string;
 }
 
-const DEFAULT_WRAPPER_CLASS = 'fixed right-2 top-2 z-30 flex items-center gap-1.5 sm:right-8 sm:top-6 sm:gap-3';
-const BASE_BUTTON_CLASS = 'min-w-[44px] rounded-full border px-3 py-1.5 text-[11px] leading-none transition-all duration-200 ease-out hover:-translate-y-px hover:shadow-md sm:min-w-[64px] sm:px-7 sm:py-3 sm:text-sm';
-const LIGHT_THEME_BUTTON_CLASS = 'bg-[#E7DDFC] text-[#2C2440] border-[#C8B6EB] hover:bg-[#DED0FA] hover:border-[#B9A2E6]';
-const DARK_THEME_BUTTON_CLASS = 'bg-[#2C2440] text-[#EDE8FA] border-[#463865] hover:bg-[#3A2E55] hover:border-[#5B4A82]';
+const DEFAULT_WRAPPER_CLASS = 'fixed left-1/2 top-6 z-30 flex -translate-x-1/2 items-center gap-1.5 sm:left-auto sm:right-8 sm:top-6 sm:translate-x-0 sm:gap-3';
+const BASE_BUTTON_CLASS = 'min-w-[52px] rounded-xl px-8 py-3 text-sm leading-none transition hover:-translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9B3FF66]';
+const LIGHT_THEME_BUTTON_CLASS = 'bg-[#C9B3FF] text-[#2C2440] shadow-[0_8px_20px_rgba(111,84,173,0.28)] hover:bg-[#BFA6F7]';
+const DARK_THEME_BUTTON_CLASS = 'bg-[#7A66C7] text-[#F5F2FF] shadow-[0_8px_20px_rgba(111,84,173,0.28)] hover:bg-[#8A75D6] focus-visible:ring-[#8A75D64D]';
 
 const ThemeLanguageControlsComponent = memo(function ThemeLanguageControls({
   className = DEFAULT_WRAPPER_CLASS,
@@ -42,7 +42,7 @@ const ThemeLanguageControlsComponent = memo(function ThemeLanguageControls({
       <button
         onClick={handleLanguageSwitch}
         type="button"
-        className={`${BASE_BUTTON_CLASS} ${themeButtonClass} text-xs font-medium tracking-wide`}
+        className={`${BASE_BUTTON_CLASS} ${themeButtonClass} tracking-wide`}
         title={languageButtonTitle}
       >
         {i18n.language.toUpperCase()}
@@ -51,7 +51,7 @@ const ThemeLanguageControlsComponent = memo(function ThemeLanguageControls({
       <button
         onClick={toggleTheme}
         type="button"
-        className={`${BASE_BUTTON_CLASS} ${themeButtonClass} text-sm`}
+        className={`${BASE_BUTTON_CLASS} ${themeButtonClass}`}
         title={themeButtonTitle}
       >
         {isDark ? '☽' : '☀'}

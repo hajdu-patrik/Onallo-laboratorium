@@ -32,7 +32,7 @@ var apiService = builder.AddProject<Projects.AutoService_ApiService>("apiservice
 var webUi = builder.AddNpmApp("webui", "../AutoService.WebUI", "dev")
                    .WithReference(apiService)
                    .WithEnvironment("VITE_API_URL", apiService.GetEndpoint("https"))
-                   .WithHttpEndpoint(port: webUiPort, env: "PORT")
+                   .WithHttpsEndpoint(port: webUiPort, env: "PORT")
                    .WithExternalHttpEndpoints();
 
 builder.Build().Run();

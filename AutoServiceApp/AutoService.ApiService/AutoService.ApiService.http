@@ -260,6 +260,28 @@ Content-Type: application/json
 
 ###
 
+### [Negative][Login] Existing customer email cannot log in (mechanic-only)
+POST {{AutoService_ApiService_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "anna.toth@gmail.com",
+  "password": "{{TestPassword}}"
+}
+
+###
+
+### [Negative][Login] Existing customer phone cannot log in (mechanic-only)
+POST {{AutoService_ApiService_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "phoneNumber": "+36 30 444 5566",
+  "password": "{{TestPassword}}"
+}
+
+###
+
 ### [Positive][Login Phone Matrix] Canonical 363 format
 POST {{AutoService_ApiService_HostAddress}}/api/auth/login
 Content-Type: application/json

@@ -29,6 +29,7 @@ description: "Use when editing Aspire orchestration and resource wiring in AutoS
 - Inject `VITE_API_URL` environment variable from API endpoint: `apiService.GetEndpoint("https")`.
 - This allows frontend to call backend without hardcoding URLs.
 - WebUI endpoint port must come from AppHost configuration key `Ports:WebUi` and be passed as `PORT`.
+- WebUI runs over HTTPS (`WithHttpsEndpoint`) with Vite's `vite-plugin-mkcert` for self-signed certs.
 - Enable external HTTP endpoints for local development.
 
 ## Development Notes
@@ -37,6 +38,11 @@ description: "Use when editing Aspire orchestration and resource wiring in AutoS
 - AppHost manages all resource initialization and wiring.
 - Logs and container outputs can be viewed in the Aspire dashboard.
 - Keep local fixed ports in `AutoService.AppHost/appsettings.json` under `Ports` and update there only.
+
+## Secrets & Parameters
+
+- `postgres-password` — PostgreSQL server password (secret parameter, stored in user secrets).
+- `jwt-secret` — JWT signing secret injected into API service as `JwtSettings__Secret` (secret parameter).
 
 ## Avoid
 

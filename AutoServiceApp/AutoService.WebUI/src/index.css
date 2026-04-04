@@ -14,9 +14,15 @@
   }
 
   body {
-    @apply bg-white dark:bg-slate-950 text-slate-950 dark:text-white;
+    background-color: #ECECEF;
+    color: #2C2440;
     font-family: inherit;
     line-height: 1.5;
+  }
+
+  .dark body {
+    background-color: #09090F;
+    color: #EDE8FA;
   }
 
   input,
@@ -27,7 +33,21 @@
   }
 
   a {
-    @apply text-purple-600 dark:text-purple-400 font-medium hover:text-purple-700 dark:hover:text-purple-300 transition-colors;
+    color: #7A66C7;
+    font-weight: 500;
+    transition: color 0.2s;
+  }
+
+  a:hover {
+    color: #5E4698;
+  }
+
+  .dark a {
+    color: #C9B3FF;
+  }
+
+  .dark a:hover {
+    color: #E2D9FF;
   }
 
   button {
