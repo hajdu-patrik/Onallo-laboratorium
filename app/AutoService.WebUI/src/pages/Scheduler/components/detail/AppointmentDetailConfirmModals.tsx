@@ -70,6 +70,7 @@ const AppointmentDetailConfirmModalsComponent = memo(function AppointmentDetailC
               type="button"
               onClick={onConfirmStatusChange}
               disabled={isUpdating || pendingStatusChange === null}
+              aria-busy={isUpdating}
               className={buttonClass}
             >
               <Save className="h-4 w-4 shrink-0" />
@@ -104,6 +105,7 @@ const AppointmentDetailConfirmModalsComponent = memo(function AppointmentDetailC
               type="button"
               onClick={onConfirmClaim}
               disabled={isClaiming}
+              aria-busy={isClaiming}
               className={buttonClass}
             >
               <UserPlus className="h-4 w-4 shrink-0" />
@@ -134,6 +136,7 @@ const AppointmentDetailConfirmModalsComponent = memo(function AppointmentDetailC
               type="button"
               onClick={onConfirmUnclaim}
               disabled={isUnclaiming}
+              aria-busy={isUnclaiming}
               className={dangerButtonClass}
             >
               <LogOut className="h-4 w-4 shrink-0" />
@@ -164,6 +167,7 @@ const AppointmentDetailConfirmModalsComponent = memo(function AppointmentDetailC
               type="button"
               onClick={onConfirmSave}
               disabled={isSaving}
+              aria-busy={isSaving}
               className={buttonClass}
             >
               <Save className="h-4 w-4 shrink-0" />

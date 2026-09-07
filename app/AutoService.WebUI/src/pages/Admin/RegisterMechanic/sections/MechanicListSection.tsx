@@ -190,6 +190,7 @@ export const MechanicListSection = memo(function MechanicListSection({ refreshKe
 								void handleDelete();
 							}}
 							disabled={isDeleting || !deleteTarget}
+							aria-busy={isDeleting}
 							className={dangerButtonClass}
 						>
 							<Trash2 className="h-4 w-4 shrink-0" />

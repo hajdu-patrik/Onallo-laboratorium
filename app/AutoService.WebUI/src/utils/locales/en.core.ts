@@ -225,7 +225,6 @@ export const enCore = {
       title: '{{month}} {{year}}',
       prevMonth: 'Previous month',
       nextMonth: 'Next month',
-      loading: 'Loading calendar...',
     },
     monthList: {
       title: 'Monthly Appointments',

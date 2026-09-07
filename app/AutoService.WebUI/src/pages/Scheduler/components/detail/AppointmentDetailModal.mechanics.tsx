@@ -112,6 +112,7 @@ export const MechanicsSection = memo(function MechanicsSection({
           type="button"
           onClick={onClaim}
           disabled={isMechanicMutationBusy}
+          aria-busy={isClaiming}
           className={`${schedulerInlineClaimButtonClass} mt-3`}
         >
           <UserPlus className="h-3 w-3 shrink-0" />
@@ -150,6 +151,7 @@ export const MechanicsSection = memo(function MechanicsSection({
               type="button"
               onClick={onAdminAssign}
               disabled={isMechanicMutationBusy || !selectedNewMechanicId}
+              aria-busy={isAssigning}
               className={mediumContextPrimaryButtonClass}
             >
               <span className="min-w-0 truncate">{isAssigning ? t('scheduler.detail.saving') : t('scheduler.detail.addMechanic')}</span>

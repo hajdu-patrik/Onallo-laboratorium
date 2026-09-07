@@ -7,11 +7,10 @@ import { useTranslation } from 'react-i18next';
 import type { AppointmentDto, AppointmentStatus } from '../../../../types/scheduler/scheduler.types';
 import {
   baseSectionHeadingTextClass,
-  defaultBorderToneClass,
   insetSurfaceClass,
+  loadingSpinnerClass,
   mutedMetaTextClass,
   mutedSecondaryTextClass,
-  roundedOverflowBorderLayoutClass,
 } from '../../../../utils/formStyles';
 import { AppointmentCard } from '../shared/AppointmentCard';
 import { MonthAppointmentFilters, MonthAppointmentSortControls } from './MonthAppointmentFilters';
@@ -28,7 +27,6 @@ interface MonthAppointmentListProps {
   readonly onClearFilter: () => void;
 }
 
-const MONTH_LIST_SKELETON_COUNT = 4;
 
 const PLACEHOLDER_MECHANIC_NAME_PATTERN = /^(?:unknown|ismeretlen|n\/a|none|-+)$/i;
 
@@ -119,13 +117,8 @@ const MonthAppointmentListComponent = memo(function MonthAppointmentList({
   let listContent: ReactNode;
   if (isLoading) {
     listContent = (
-      <div className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2">
-        {Array.from({ length: MONTH_LIST_SKELETON_COUNT }, (_, index) => (
-          <div
-            key={`month-skeleton-${index}`}
-            className={`${roundedOverflowBorderLayoutClass} ${defaultBorderToneClass} min-h-40 animate-pulse motion-reduce:animate-none bg-arsm-card dark:bg-arsm-input-dark`}
-          />
-        ))}
+      <div className="flex min-w-0 items-center justify-center py-12">
+        <div className={`h-8 w-8 ${loadingSpinnerClass}`} />
       </div>
     );
   } else if (sortedAppointments.length === 0) {

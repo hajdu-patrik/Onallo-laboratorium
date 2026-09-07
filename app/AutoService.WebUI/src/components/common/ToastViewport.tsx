@@ -73,7 +73,7 @@ const ToastItem = memo(function ToastItem({ toast }: ToastItemProps) {
       <button
         type="button"
         onClick={() => removeToast(toast.id)}
-        className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md opacity-80 transition-[opacity,transform] duration-150 ease-out hover:scale-105 hover:opacity-100 motion-reduce:transform-none"
+        className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md opacity-80 transition-[opacity,transform] duration-150 ease-out hover:scale-105 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-arsm-focus-ring/40 focus-visible:opacity-100 motion-reduce:transform-none dark:focus-visible:ring-arsm-focus-ring/30"
         aria-label={translate('toast.dismiss')}
       >
         <X className="h-4 w-4" />

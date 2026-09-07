@@ -63,9 +63,9 @@ const SecuritySectionComponent = memo(function SecuritySection({
             aria-label={showPassword ? t('login.hidePassword') : t('login.showPassword')}
           >
             {showPassword ? (
-              <Eye className="h-5 w-5" aria-hidden="true" />
-            ) : (
               <EyeOff className="h-5 w-5" aria-hidden="true" />
+            ) : (
+              <Eye className="h-5 w-5" aria-hidden="true" />
             )}
           </button>
         </div>
@@ -97,9 +97,9 @@ const SecuritySectionComponent = memo(function SecuritySection({
             aria-label={showConfirmPassword ? t('login.hidePassword') : t('login.showPassword')}
           >
             {showConfirmPassword ? (
-              <Eye className="h-5 w-5" aria-hidden="true" />
-            ) : (
               <EyeOff className="h-5 w-5" aria-hidden="true" />
+            ) : (
+              <Eye className="h-5 w-5" aria-hidden="true" />
             )}
           </button>
         </div>

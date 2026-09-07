@@ -82,6 +82,7 @@ const SettingsActionModalsComponent = memo(function SettingsActionModals({
               type="button"
               onClick={onConfirmPictureRemove}
               disabled={isUploadingPicture}
+              aria-busy={isUploadingPicture}
               className={dangerButtonClass}
             >
               <Trash2 className="h-4 w-4 shrink-0" />
@@ -116,6 +117,7 @@ const SettingsActionModalsComponent = memo(function SettingsActionModals({
               type="button"
               onClick={onConfirmProfileSave}
               disabled={isUpdatingProfile}
+              aria-busy={isUpdatingProfile}
               className={buttonClass}
             >
               <Save className="h-4 w-4 shrink-0" />
@@ -150,6 +152,7 @@ const SettingsActionModalsComponent = memo(function SettingsActionModals({
               type="button"
               onClick={onConfirmPasswordChange}
               disabled={isChangingPassword}
+              aria-busy={isChangingPassword}
               className={buttonClass}
             >
               <KeyRound className="h-4 w-4 shrink-0" />

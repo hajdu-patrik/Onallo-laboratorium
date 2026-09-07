@@ -283,6 +283,7 @@ const RegisterMechanicComponent = memo(function RegisterMechanicPage() {
               type="button"
               onClick={() => { void handleRegisterConfirmed(); }}
               disabled={isSubmitting}
+              aria-busy={isSubmitting}
               className={buttonClass}
             >
               <Save className="h-4 w-4 shrink-0" />

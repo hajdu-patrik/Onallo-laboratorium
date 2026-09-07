@@ -66,6 +66,7 @@ const CustomerFormModalComponent = memo(function CustomerFormModal({
             type="submit"
             form="customers-customer-form"
             disabled={isSaving || !isSaveEnabled}
+            aria-busy={isSaving}
             className={buttonClass}
           >
             <Save className="h-4 w-4 shrink-0" />

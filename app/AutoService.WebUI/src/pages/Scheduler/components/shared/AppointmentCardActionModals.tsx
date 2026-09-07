@@ -45,7 +45,7 @@ const AppointmentCardActionModalsComponent = memo(function AppointmentCardAction
             <button type="button" onClick={onCloseClaimConfirm} disabled={isClaiming} className={secondaryButtonClass}>
               {t('scheduler.intake.cancel')}
             </button>
-            <button type="button" onClick={onConfirmClaim} disabled={isClaiming} className={buttonClass}>
+            <button type="button" onClick={onConfirmClaim} disabled={isClaiming} aria-busy={isClaiming} className={buttonClass}>
               <UserPlus className="h-4 w-4 shrink-0" />
               <span>{isClaiming ? t('scheduler.detail.saving') : t('scheduler.detail.confirmClaim')}</span>
             </button>
@@ -65,7 +65,7 @@ const AppointmentCardActionModalsComponent = memo(function AppointmentCardAction
             <button type="button" onClick={onCloseUnclaimConfirm} disabled={isUnclaiming} className={secondaryButtonClass}>
               {t('scheduler.intake.cancel')}
             </button>
-            <button type="button" onClick={onConfirmUnclaim} disabled={isUnclaiming} className={dangerButtonClass}>
+            <button type="button" onClick={onConfirmUnclaim} disabled={isUnclaiming} aria-busy={isUnclaiming} className={dangerButtonClass}>
               <LogOut className="h-4 w-4 shrink-0" />
               <span>{isUnclaiming ? t('scheduler.detail.saving') : t('scheduler.detail.confirmUnassign')}</span>
             </button>

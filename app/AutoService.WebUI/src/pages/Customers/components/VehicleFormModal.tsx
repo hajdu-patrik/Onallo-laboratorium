@@ -60,6 +60,7 @@ const VehicleFormModalComponent = memo(function VehicleFormModal({
             type="submit"
             form="customers-vehicle-form"
             disabled={isSaving || !isSaveEnabled}
+            aria-busy={isSaving}
             className={buttonClass}
           >
             <Save className="h-4 w-4 shrink-0" />

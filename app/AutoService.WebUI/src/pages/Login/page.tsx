@@ -208,9 +208,9 @@ const LoginComponent = memo(function Login() {
 									disabled={isLoading}
 								>
 									{showPassword ? (
-										<Eye className="h-5 w-5" aria-hidden="true" />
-									) : (
 										<EyeOff className="h-5 w-5" aria-hidden="true" />
+									) : (
+										<Eye className="h-5 w-5" aria-hidden="true" />
 									)}
 								</button>
 							</div>

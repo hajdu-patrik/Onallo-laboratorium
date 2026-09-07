@@ -96,6 +96,7 @@ export const AppointmentDetailFooter = memo(function AppointmentDetailFooter({
           data-testid="appointment-detail-save"
           onClick={onSave}
           disabled={isSaving || !isSaveEnabled}
+          aria-busy={isSaving}
           className={`${mediumContextPrimaryButtonClass} w-full`}
         >
           <Save className="h-4 w-4 shrink-0" />

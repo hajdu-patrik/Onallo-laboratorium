@@ -9,8 +9,8 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { AppointmentDto, AppointmentStatus, CalendarDay } from '../../../../types/scheduler/scheduler.types';
 import {
   insetSurfaceClass,
+  loadingSpinnerClass,
   mutedDarkCardToneClass,
-  mutedSecondaryTextClass,
   schedulerNavIconButtonClass,
 } from '../../../../utils/formStyles';
 
@@ -199,7 +199,9 @@ const CalendarViewComponent = memo(function CalendarView({
       </div>
 
       {isLoading ? (
-        <div className={`py-8 text-center ${mutedSecondaryTextClass}`}>{t('scheduler.calendar.loading')}</div>
+        <div className="flex min-w-0 items-center justify-center py-12">
+          <div className={`h-8 w-8 ${loadingSpinnerClass}`} />
+        </div>
       ) : (
         <>
           <div className="mb-1 grid grid-cols-7 gap-px max-[320px]:mb-0.5 max-[320px]:gap-0">
@@ -229,7 +231,7 @@ const CalendarViewComponent = memo(function CalendarView({
                       ? 'min-h-[4.5rem] max-[320px]:min-h-[3.8rem] md:min-h-[2.5rem]'
                       : 'min-h-[2.5rem] max-[320px]:min-h-11';
 
-                    const dayClassName = `${rowHeight} rounded-lg p-1 max-[320px]:p-0.5 flex flex-col items-center justify-start ${
+                    const dayClassName = `${rowHeight} rounded-lg p-1 max-[320px]:p-0.5 flex flex-col items-center justify-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-arsm-focus-ring/40 dark:focus-visible:ring-arsm-focus-ring/30 ${
                       day.isCurrentMonth
                         ? 'text-arsm-primary dark:text-arsm-primary-dark hover:bg-arsm-hover dark:hover:bg-arsm-hover-dark'
                         : 'text-arsm-muted/75 dark:text-arsm-muted-dark/70'

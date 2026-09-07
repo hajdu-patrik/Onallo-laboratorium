@@ -49,6 +49,7 @@ const DeleteVehicleModalComponent = memo(function DeleteVehicleModal({
             type="button"
             onClick={onConfirm}
             disabled={isDeleting}
+            aria-busy={isDeleting}
             className={dangerButtonClass}
           >
             <Trash2 className="h-4 w-4 shrink-0" />

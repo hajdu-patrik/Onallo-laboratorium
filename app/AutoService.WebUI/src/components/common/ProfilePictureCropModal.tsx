@@ -78,6 +78,7 @@ const ProfilePictureCropModalComponent = memo(function ProfilePictureCropModal({
               void handleConfirm();
             }}
             disabled={isSubmitting || !croppedAreaPixels}
+            aria-busy={isSubmitting}
             className={buttonClass}
           >
             {isSubmitting ? t('settings.uploading') : t('settings.cropAndUpload')}

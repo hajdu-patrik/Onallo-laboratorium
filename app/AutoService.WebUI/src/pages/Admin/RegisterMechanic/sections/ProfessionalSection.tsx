@@ -52,7 +52,7 @@ const ProfessionalSectionComponent = memo(function ProfessionalSection({
             id="specialization"
             value={specialization}
             onChange={(event) => onSpecializationChange(event.target.value)}
-            className={`${compactSelectFullClass} h-10 min-h-0 px-3 py-2 text-sm`}
+            className={compactSelectFullClass}
             disabled={isSubmitting}
             required
           >

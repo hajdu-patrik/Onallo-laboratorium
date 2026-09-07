@@ -125,6 +125,7 @@ const DeleteProfileConfirmModalComponent = memo(function DeleteProfileConfirmMod
               type="button"
               onClick={onConfirm}
               disabled={isDeleting || isDeleteConfirmationInvalid}
+              aria-busy={isDeleting}
               className={dangerButtonClass}
             >
               <Trash2 className="h-4 w-4 shrink-0" />

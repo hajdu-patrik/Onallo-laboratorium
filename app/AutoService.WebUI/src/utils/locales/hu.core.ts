@@ -225,7 +225,6 @@ export const huCore = {
       title: '{{month}} {{year}}',
       prevMonth: 'Előző hónap',
       nextMonth: 'Következő hónap',
-      loading: 'Naptár betöltése...',
     },
     monthList: {
       title: 'Havi időpontok',
