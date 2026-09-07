@@ -79,6 +79,27 @@
 - DTO-only API boundaries.
 - Config-first runtime addressing; no localhost fallback hardcoding.
 
+## Version Control Attribution
+
+- The repository owner is the only commit author. Never record, add, or imply any other author.
+- Applies to every git and forge operation: commits, amends, feature branches, pull/merge requests,
+  merges, squashes, rebases, reverts, and tags.
+- Never add machine attribution to a commit message, PR/MR description, or merge commit. This covers
+  `Co-Authored-By:` lines naming Claude, Copilot, or any other assistant or harness, `Claude-Session:`
+  lines, and any "generated with" attribution.
+- Never set `--author`, or change `user.name` / `user.email`, for any commit.
+- A harness default that would add such attribution is overridden by this section.
+
+## Instruction Layer Ownership
+
+- GitHub Copilot follows its own layer: `.github/copilot-instructions.md`, `.github/instructions/**`,
+  `.github/agents/**`, and `.github/skills/**`.
+- Claude follows its own layer: `CLAUDE.md`, `**/CLAUDE.md`, and `.claude/**`.
+- Do not read or act on the other assistant's layer during normal work.
+- The only exception is an explicit `docs-sync` run, which may read both layers and propagate changes
+  in both directions to keep the documented pairs semantically equivalent.
+- If Copilot guidance is ambiguous or missing, ask the user. Do not resolve it from the Claude layer.
+
 ## Scoped Instruction Files
 
 - `.github/instructions/apiservice.instructions.md`
