@@ -108,6 +108,11 @@ dotnet user-secrets set "Parameters:minio-password" "<local-minio-password>"
 Hosted environments point `ObjectStorage__ServiceUrl` at the real S3-compatible endpoint instead,
 keep `ObjectStorage:AutoCreateBucket` disabled, and provision the private bucket up front.
 
+Cloudflare R2 additionally needs `ObjectStorage:DisablePayloadSigning` and
+`ObjectStorage:DisableDefaultChecksumValidation` set to `true`: R2 does not support the streaming
+SigV4 implementation or the CRC32 checksum that AWSSDK.S3 v4 sends by default, and uploads fail
+without them. MinIO keeps both `false`.
+
 ## Useful Commands
 
 | Task | Command |

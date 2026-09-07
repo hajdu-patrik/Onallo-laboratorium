@@ -13,4 +13,6 @@ public sealed record ObjectStorageSettings(
     string AccessKeyId,
     string SecretAccessKey,
     bool ForcePathStyle,
-    bool AutoCreateBucket);
+    bool AutoCreateBucket,
+    bool DisablePayloadSigning,
+    bool DisableDefaultChecksumValidation);

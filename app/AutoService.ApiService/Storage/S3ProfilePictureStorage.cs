@@ -38,7 +38,11 @@ internal sealed class S3ProfilePictureStorage(
                 Key = objectKey,
                 InputStream = contentStream,
                 ContentType = contentType,
-                DisablePayloadSigning = false
+                // Provider quirks, not preferences: Cloudflare R2 rejects the streaming SigV4 payload
+                // signing and the CRC32 checksum that AWSSDK.S3 v4 sends by default, while MinIO wants
+                // the defaults. Both stay configuration so switching providers needs no code change.
+                DisablePayloadSigning = settings.DisablePayloadSigning,
+                DisableDefaultChecksumValidation = settings.DisableDefaultChecksumValidation
             },
             cancellationToken);
 

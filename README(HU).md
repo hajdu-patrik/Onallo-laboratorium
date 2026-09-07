@@ -106,6 +106,11 @@ dotnet user-secrets set "Parameters:minio-password" "<lokalis-minio-jelszo>"
 Hosztolt környezetben az `ObjectStorage__ServiceUrl` a valódi S3-kompatibilis végpontra mutat,
 az `ObjectStorage:AutoCreateBucket` marad kikapcsolva, a privát bucketet pedig előre létre kell hozni.
 
+A Cloudflare R2-höz ezen felül az `ObjectStorage:DisablePayloadSigning` és az
+`ObjectStorage:DisableDefaultChecksumValidation` értékét is `true`-ra kell állítani: az R2 nem
+támogatja az AWSSDK.S3 v4 alapértelmezett streaming SigV4 aláírását és CRC32 ellenőrzőösszegét,
+ezek nélkül a feltöltés hibára fut. MinIO esetén mindkettő `false` marad.
+
 ## Hasznos parancsok
 
 | Feladat | Parancs |

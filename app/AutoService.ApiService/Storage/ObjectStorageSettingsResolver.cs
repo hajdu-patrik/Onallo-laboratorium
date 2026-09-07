@@ -27,7 +27,9 @@ public static class ObjectStorageSettingsResolver
             AccessKeyId: ResolveRequiredValue(configuration, "AccessKeyId"),
             SecretAccessKey: ResolveRequiredValue(configuration, "SecretAccessKey"),
             ForcePathStyle: ResolveRequiredFlag(configuration, "ForcePathStyle"),
-            AutoCreateBucket: ResolveRequiredFlag(configuration, "AutoCreateBucket"));
+            AutoCreateBucket: ResolveRequiredFlag(configuration, "AutoCreateBucket"),
+            DisablePayloadSigning: ResolveRequiredFlag(configuration, "DisablePayloadSigning"),
+            DisableDefaultChecksumValidation: ResolveRequiredFlag(configuration, "DisableDefaultChecksumValidation"));
     }
 
     /**
