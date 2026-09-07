@@ -18,6 +18,23 @@ from urllib.parse import unquote, urlparse
 from httpyac_summary import extract_http_summary
 
 TARGET_ORDER = ("playwright", "http", "sql")
+
+# Behaviour that HTTPYAC cannot express: multipart upload contracts and a streaming SSE round trip.
+# (report key, command label, script path, human-readable name)
+PYTHON_HTTP_CHECKS = (
+    (
+        "profilePictureUploadCheck",
+        "http-profile-picture-upload-check",
+        "tests/API/profile/profile-picture-upload-check.py",
+        "Profile picture upload check",
+    ),
+    (
+        "appointmentUpdatesCheck",
+        "http-appointment-updates-check",
+        "tests/API/appointments/appointment-updates-check.py",
+        "Appointment live updates check",
+    ),
+)
 DEFAULT_COMMAND_TIMEOUT_SECONDS = 300
 SENSITIVE_NAME_PATTERN = re.compile(r"(?i)(password|passwd|secret|token|cookie|key|connection|pgpassword)")
 POSTGRES_URI_PATTERN = re.compile(r"postgres(?:ql)?://[^\s\"']+", re.IGNORECASE)
@@ -237,15 +254,14 @@ class LocalTestRunner:
         return self._command_suite_result("playwright", result)
 
     def _run_http(self) -> SuiteResult:
-        """Execute HTTP endpoint test suite via HTTPYAC."""
+        """Execute HTTP endpoint test suite via HTTPYAC plus the streaming/behaviour checks."""
         npx = self._required_executable("npx")
         environment = {**self.environment, "NODE_TLS_REJECT_UNAUTHORIZED": "0"}
-        upload_result = self.command_runner.run(
-            "http-profile-picture-upload-check",
-            [sys.executable, "tests/API/profile/profile-picture-upload-check.py"],
-            self.root_dir,
-            environment,
-        )
+
+        script_results = [
+            (detail_key, self.command_runner.run(command_name, [sys.executable, script], self.root_dir, environment), label)
+            for detail_key, command_name, script, label in PYTHON_HTTP_CHECKS
+        ]
 
         result = self.command_runner.run(
             "http",
@@ -255,18 +271,22 @@ class LocalTestRunner:
         )
 
         details = extract_http_summary(result.stdout)
-        upload_details = self._extract_json_payload(upload_result.stdout) or {
-            "status": "failed",
-            "error": "Profile picture upload check did not return JSON output.",
-        }
-        details["profilePictureUploadCheck"] = upload_details
+        checks_passed = True
+        output = result.stdout + result.stderr
+
+        for detail_key, script_result, label in script_results:
+            script_details = self._extract_json_payload(script_result.stdout) or {
+                "status": "failed",
+                "error": f"{label} did not return JSON output.",
+            }
+            details[detail_key] = script_details
+            script_status = str(script_details.get("status", "failed"))
+            checks_passed = checks_passed and script_result.return_code == 0 and script_status in {"passed", "skipped"}
+            output += script_result.stdout + script_result.stderr
 
         http_requests_are_clean = result.return_code == 0 and details.get("failedRequests", 0) == 0 and details.get("erroredRequests", 0) == 0
-        upload_status = str(upload_details.get("status", "failed"))
-        upload_checks_passed = upload_result.return_code == 0 and upload_status in {"passed", "skipped"}
-        status = "passed" if http_requests_are_clean and upload_checks_passed else "failed"
+        status = "passed" if http_requests_are_clean and checks_passed else "failed"
 
-        output = result.stdout + result.stderr + upload_result.stdout + upload_result.stderr
         return SuiteResult("http", status, 0 if status == "passed" else 1, details, self._tail(output))
 
     def _run_sql(self) -> SuiteResult:

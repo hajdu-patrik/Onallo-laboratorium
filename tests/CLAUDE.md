@@ -44,5 +44,7 @@
 - Profile picture GET cache headers, ETag conditional `304`, and auth/cookie `Vary` behavior.
 - Profile picture upload contract: JPEG/PNG/WebP in, always `image/webp` out, 4 MB cap, 422 on magic-byte or decode failure. Image fixtures must be structurally valid (correct chunk CRCs), because the API decodes and re-encodes every upload.
 - `people` profile-picture column contract and the legacy-column-removal post-condition check in `tests/Database/core-schema/core-schema-contracts.sql`.
-- Profile-picture HTTP checks share `tests/API/profile/profile_picture_check_support.py`; the runner still invokes only `profile-picture-upload-check.py`.
+- Python HTTP checks cover behaviour HTTPYAC cannot express (multipart upload contracts, streaming SSE). They share `tests/API/http_check_support.py` for the cookie-aware client, credentials and assertions; `tests/API/profile/profile_picture_check_support.py` now holds only the profile-picture fixtures and re-exports the shared helpers.
+- The runner drives them from `PYTHON_HTTP_CHECKS` in `scripts/run-local-test-suite.py`; each one reports under its own key in the sanitized summary (`profilePictureUploadCheck`, `appointmentUpdatesCheck`). Add a new check to that tuple rather than copying the invocation.
+- `appointment-updates-check.py` asserts the SSE payload keys are camelCase. That contract is easy to break silently, because the payload is serialized by a static `JsonSerializer` call that does not pick up the ASP.NET Core JSON options, and the browser parsers drop anything they cannot read.
 - Scheduler intake and customer details/history split-view E2E behavior.
