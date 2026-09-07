@@ -55,7 +55,7 @@
 - `sql-database-test` only for explicit request or significant schema/persistence change.
 - `e2e-playwright-test` only for explicit request or significant frontend flow change.
 - Use `python scripts/run-local-test-suite.py http|sql|all` and review sanitized summary.
-- Schema gate: `dotnet tool run dotnet-ef -- migrations has-pending-model-changes --project AutoService.ApiService` must pass; it runs offline (no database) and fails when entities changed without a matching migration. The EF CLI is pinned in `dotnet-tools.json`.
+- Schema gate: `dotnet tool run dotnet-ef -- migrations has-pending-model-changes --project AutoService.ApiService` must pass; it runs offline (no database) and fails when entities changed without a matching migration. The EF CLI is pinned in `dotnet-tools.json`. Run it locally: it builds the design-time `DbContext` through the application host, so it needs `appsettings.Local.json`, and CI therefore does not run it.
 
 ## Always-On for Code Changes
 
