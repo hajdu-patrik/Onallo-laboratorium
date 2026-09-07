@@ -40,7 +40,10 @@ jobs:
       run: dotnet test --no-build --verbosity normal
 
     - name: Restore .NET tools
-      run: dotnet tool restore
+      # dotnet/sdk#53783: with a cold tool-resolver cache the restore misattributes the
+      # first manifest tool's commands to the second one, so dotnet-ef fails on a fresh
+      # runner while it succeeds locally. The retry runs against the now-warm cache.
+      run: dotnet tool restore || dotnet tool restore
 
     # Offline schema gate: fails when entities changed without a matching migration.
     - name: Verify EF migrations match the model
