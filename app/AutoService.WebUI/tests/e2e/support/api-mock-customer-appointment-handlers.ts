@@ -1,5 +1,5 @@
 import type { Route } from '@playwright/test';
-import type { SchedulerCreateIntakeRequest } from '../../../src/types/scheduler/scheduler.types';
+import type { AppointmentStatus, SchedulerCreateIntakeRequest } from '../../../src/types/scheduler/scheduler.types';
 import type { CreateVehicleRequest } from '../../../src/types/customers/customers.types';
 import type { InstallApiMockOptions } from './api-mocks';
 import type { MockApiState } from './test-data';
@@ -149,6 +149,23 @@ export async function tryHandleAppointmentRoute(
   if (path === '/api/appointments/intake' && method === 'POST') {
     const appointment = createAppointment(state, route.request().postDataJSON() as SchedulerCreateIntakeRequest);
     await fulfillJson(route, appointment, 201);
+    return true;
+  }
+
+  const appointmentStatusMatch = /^\/api\/appointments\/(\d+)\/status$/.exec(path);
+  if (appointmentStatusMatch && method === 'PUT') {
+    const appointmentId = Number(appointmentStatusMatch[1]);
+    const appointmentIndex = state.appointments.findIndex((appointment) => appointment.id === appointmentId);
+
+    if (appointmentIndex < 0) {
+      await fulfillJson(route, { detail: 'Appointment not found.' }, 404);
+      return true;
+    }
+
+    const { status } = route.request().postDataJSON() as { status: AppointmentStatus };
+    const updated = { ...state.appointments[appointmentIndex], status };
+    state.appointments[appointmentIndex] = updated;
+    await fulfillJson(route, updated);
     return true;
   }
 

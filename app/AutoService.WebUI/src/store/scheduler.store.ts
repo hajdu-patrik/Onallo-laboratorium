@@ -132,9 +132,26 @@ export const useSchedulerStore = create<SchedulerState>((set) => {
     return date.getFullYear() === year && date.getMonth() + 1 === month && date.getDate() === day;
   };
 
-  /** Inserts or replaces an appointment by id while preserving array order. */
-  const upsertById = (appointments: AppointmentDto[], updated: AppointmentDto): AppointmentDto[] => {
+  /**
+   * Inserts, replaces, or removes an appointment by id so a bucket never keeps a stale copy.
+   *
+   * Rescheduling can move an appointment out of a bucket, so membership has to be re-evaluated
+   * on every write; returning the original array when nothing changed keeps referential equality
+   * and avoids needless re-renders.
+   */
+  const placeById = (
+    appointments: AppointmentDto[],
+    updated: AppointmentDto,
+    belongsHere: boolean,
+  ): AppointmentDto[] => {
     const existingIndex = appointments.findIndex((appointment) => appointment.id === updated.id);
+
+    if (!belongsHere) {
+      return existingIndex === -1
+        ? appointments
+        : appointments.filter((appointment) => appointment.id !== updated.id);
+    }
+
     if (existingIndex === -1) {
       return [...appointments, updated];
     }
@@ -142,6 +159,18 @@ export const useSchedulerStore = create<SchedulerState>((set) => {
     const copy = [...appointments];
     copy[existingIndex] = updated;
     return copy;
+  };
+
+  /**
+   * Checks whether a date falls in the viewed month or either adjacent month.
+   *
+   * The six-week calendar grid spills into the previous and next month, and useSchedulerDataSync
+   * fills calendarAppointments from all three, so that is the membership window here too.
+   */
+  const isWithinCalendarWindow = (date: Date, viewYear: number, viewMonth: number): boolean => {
+    const scheduledMonthIndex = date.getFullYear() * 12 + date.getMonth();
+    const viewedMonthIndex = viewYear * 12 + (viewMonth - 1);
+    return Math.abs(scheduledMonthIndex - viewedMonthIndex) <= 1;
   };
 
   return {
@@ -189,12 +218,13 @@ export const useSchedulerStore = create<SchedulerState>((set) => {
           scheduled.getMonth() + 1 === state.calendarMonth;
 
         return {
-          todayAppointments: shouldBeInToday
-            ? upsertById(state.todayAppointments, updated)
-            : state.todayAppointments,
-          monthAppointments: shouldBeInViewedMonth
-            ? upsertById(state.monthAppointments, updated)
-            : state.monthAppointments,
+          todayAppointments: placeById(state.todayAppointments, updated, shouldBeInToday),
+          monthAppointments: placeById(state.monthAppointments, updated, shouldBeInViewedMonth),
+          calendarAppointments: placeById(
+            state.calendarAppointments,
+            updated,
+            isWithinCalendarWindow(scheduled, state.calendarYear, state.calendarMonth),
+          ),
         };
       }),
     setIsLoadingToday: (isLoadingToday) => set({ isLoadingToday }),
