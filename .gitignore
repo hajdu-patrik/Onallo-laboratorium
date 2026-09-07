@@ -120,3 +120,6 @@ temp/
 __pycache__/
 **/__pycache__/
 *.py[cod]
+
+# Living local project overview (kept out of version control on purpose)
+docs/PROJECT-OVERVIEW.md
