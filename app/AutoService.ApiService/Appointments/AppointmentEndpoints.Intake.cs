@@ -1,3 +1,4 @@
+using AutoService.ApiService.Appointments.Realtime;
 using System.Security.Claims;
 using AutoService.ApiService.Data;
 using AutoService.ApiService.Domain;
@@ -17,6 +18,7 @@ public static partial class AppointmentEndpoints
         ClaimsPrincipal user,
         AutoServiceDbContext db,
         ILoggerFactory loggerFactory,
+        IAppointmentUpdateBroadcaster broadcaster,
         CancellationToken cancellationToken)
     {
         var logger = loggerFactory.CreateLogger("AppointmentEndpoints.Intake");
@@ -394,6 +396,8 @@ public static partial class AppointmentEndpoints
             mechanicId,
             creatingCustomer,
             usesExistingVehicle);
+        PublishAppointmentChanged(broadcaster, appointment.Id);
+
         return Results.Created($"/api/appointments/{appointment.Id}", ToDto(appointment));
     }
 

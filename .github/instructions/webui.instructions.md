@@ -40,6 +40,8 @@ description: 'Use when editing React frontend UI, routing, stores, and frontend 
 - Customer/vehicle history stays in details panel/split-view flow.
 - Scheduler intake keeps email, exact plate, and name multi-result lookup.
 - Scheduler and customer reads keep query-cache stale times, visible-tab background refresh, and mutation invalidation behavior aligned with `src/services/cache`.
+- Live update channels are built with `createLiveUpdateChannel` (`src/services/live`), which owns the SSE connection lifecycle, reference counting, auth-aware reconnect and logout teardown. A channel only supplies its URL, SSE event name, DOM event name and payload parser; do not hand-roll a second EventSource.
+- The scheduler subscribes to `/api/appointments/updates` while mounted and refreshes the current view on each event, rather than patching local state, because an appointment can move between months.
 - Profile picture upload accepts JPEG/PNG/WebP up to 4 MB (`MAX_PROFILE_PICTURE_BYTES`); the size check runs on both the selected file and the cropped blob, because cropping re-encodes and changes the size that is actually sent.
 - The crop modal produces `image/webp` at quality 0.9 with a `.webp` file name (`src/utils/imageCrop.ts`); the API re-encodes to WebP again server-side.
 

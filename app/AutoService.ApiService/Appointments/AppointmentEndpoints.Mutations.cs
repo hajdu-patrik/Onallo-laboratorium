@@ -1,3 +1,4 @@
+using AutoService.ApiService.Appointments.Realtime;
 using System.Data;
 using System.Security.Claims;
 using AutoService.ApiService.Data;
@@ -25,6 +26,7 @@ public static partial class AppointmentEndpoints
         ClaimsPrincipal user,
         AutoServiceDbContext db,
         ILoggerFactory loggerFactory,
+        IAppointmentUpdateBroadcaster broadcaster,
         CancellationToken cancellationToken)
     {
         var logger = loggerFactory.CreateLogger("AppointmentEndpoints.Claim");
@@ -89,6 +91,8 @@ public static partial class AppointmentEndpoints
 
         logger.LogInformation("Claim succeeded: mechanic {MechanicId} assigned to appointment {AppointmentId}.", mechanicId, id);
 
+        PublishAppointmentChanged(broadcaster, appointment.Id);
+
         return Results.Ok(ToDto(appointment));
     }
 
@@ -108,6 +112,7 @@ public static partial class AppointmentEndpoints
         ClaimsPrincipal user,
         AutoServiceDbContext db,
         ILoggerFactory loggerFactory,
+        IAppointmentUpdateBroadcaster broadcaster,
         CancellationToken cancellationToken)
     {
         var logger = loggerFactory.CreateLogger("AppointmentEndpoints.Unclaim");
@@ -161,6 +166,8 @@ public static partial class AppointmentEndpoints
 
         logger.LogInformation("Unclaim succeeded: mechanic {MechanicId} removed from appointment {AppointmentId}.", mechanicId, id);
 
+        PublishAppointmentChanged(broadcaster, appointment.Id);
+
         return Results.Ok(ToDto(appointment));
     }
 
@@ -180,6 +187,7 @@ public static partial class AppointmentEndpoints
         int mechanicId,
         AutoServiceDbContext db,
         ILoggerFactory loggerFactory,
+        IAppointmentUpdateBroadcaster broadcaster,
         CancellationToken cancellationToken)
     {
         var logger = loggerFactory.CreateLogger("AppointmentEndpoints.AdminAssign");
@@ -232,6 +240,8 @@ public static partial class AppointmentEndpoints
 
         logger.LogInformation("AdminAssign succeeded: mechanic {MechanicId} assigned to appointment {AppointmentId}.", mechanicId, id);
 
+        PublishAppointmentChanged(broadcaster, appointment.Id);
+
         return Results.Ok(ToDto(appointment));
     }
 
@@ -251,6 +261,7 @@ public static partial class AppointmentEndpoints
         int mechanicId,
         AutoServiceDbContext db,
         ILoggerFactory loggerFactory,
+        IAppointmentUpdateBroadcaster broadcaster,
         CancellationToken cancellationToken)
     {
         var logger = loggerFactory.CreateLogger("AppointmentEndpoints.AdminUnassign");
@@ -296,6 +307,8 @@ public static partial class AppointmentEndpoints
         await transaction.CommitAsync(cancellationToken);
 
         logger.LogInformation("AdminUnassign succeeded: mechanic {MechanicId} removed from appointment {AppointmentId}.", mechanicId, id);
+
+        PublishAppointmentChanged(broadcaster, appointment.Id);
 
         return Results.Ok(ToDto(appointment));
     }

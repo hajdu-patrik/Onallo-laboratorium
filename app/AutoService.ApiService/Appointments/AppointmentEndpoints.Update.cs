@@ -1,3 +1,4 @@
+using AutoService.ApiService.Appointments.Realtime;
 using System.Security.Claims;
 using AutoService.ApiService.Data;
 using AutoService.ApiService.Normalization;
@@ -15,6 +16,7 @@ public static partial class AppointmentEndpoints
         ClaimsPrincipal user,
         AutoServiceDbContext db,
         ILoggerFactory loggerFactory,
+        IAppointmentUpdateBroadcaster broadcaster,
         CancellationToken cancellationToken)
     {
         var logger = loggerFactory.CreateLogger("AppointmentEndpoints.Update");
@@ -96,6 +98,8 @@ public static partial class AppointmentEndpoints
 
         logger.LogInformation("Appointment {AppointmentId} updated by mechanic {MechanicId}. IsAdmin: {IsAdmin}.", id, mechanicId, isAdmin);
 
+        PublishAppointmentChanged(broadcaster, appointment.Id);
+
         return Results.Ok(ToDto(appointment));
     }
 
@@ -109,6 +113,7 @@ public static partial class AppointmentEndpoints
         ClaimsPrincipal user,
         AutoServiceDbContext db,
         ILoggerFactory loggerFactory,
+        IAppointmentUpdateBroadcaster broadcaster,
         CancellationToken cancellationToken)
     {
         var logger = loggerFactory.CreateLogger("AppointmentEndpoints.UpdateVehicle");
@@ -237,6 +242,8 @@ public static partial class AppointmentEndpoints
         await db.SaveChangesAsync(cancellationToken);
 
         logger.LogInformation("Appointment {AppointmentId} vehicle updated by mechanic {MechanicId}. IsAdmin: {IsAdmin}.", id, mechanicId, isAdmin);
+
+        PublishAppointmentChanged(broadcaster, appointment.Id);
 
         return Results.Ok(ToDto(appointment));
     }

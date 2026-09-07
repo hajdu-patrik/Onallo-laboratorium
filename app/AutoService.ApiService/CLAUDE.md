@@ -32,6 +32,8 @@
 - Rate limits: login `10/min`, refresh `20/min`; lockout after 5 failed attempts for 15 min.
 - In-process auth rate limits/login bans are single-instance only; non-Development deployments must explicitly confirm `Deployment:RateLimiterTopology=SingleInstance` or use a distributed limiter.
 - Profile picture GET responses keep private browser caching with ETag revalidation and auth/cookie-aware `Vary` headers; SSE update behavior remains intact.
+- Live update channels share `Realtime/`: `UpdateBroadcaster<TEvent>` owns the bounded per-subscriber fan-out and the subscription caps, and `ServerSentEventStream` owns the SSE framing, keep-alive and idle timeout. Payloads serialize as camelCase, because the static `JsonSerializer` call does not pick up the ASP.NET Core JSON options and the browser parsers would drop PascalCased frames.
+- Every appointment mutation publishes `AppointmentUpdatedEvent` after its save, so `GET /api/appointments/updates` subscribers see other users' changes without polling. A handler that saves but does not publish is a bug.
 - Read-only profile GET/person lookup paths use `AsNoTracking`; profile mutations keep tracked entities.
 - Preserve middleware and endpoint mapping order in `Program.cs`.
 
@@ -55,7 +57,7 @@
 - `sql-database-test` only for explicit request or significant schema/persistence change.
 - `e2e-playwright-test` only for explicit request or significant frontend flow change.
 - Use `python scripts/run-local-test-suite.py http|sql|all` and review sanitized summary.
-- Schema gate: `dotnet tool run dotnet-ef -- migrations has-pending-model-changes --project AutoService.ApiService` must pass; it runs offline (no database) and fails when entities changed without a matching migration. The EF CLI is pinned in `dotnet-tools.json`. Run it locally: it builds the design-time `DbContext` through the application host, so it needs `appsettings.Local.json`, and CI therefore does not run it.
+- Schema gate: `dotnet tool run dotnet-ef -- migrations has-pending-model-changes --project AutoService.ApiService` must pass; it runs offline (no database) and fails when entities changed without a matching migration. The EF CLI is pinned in `dotnet-tools.json`. `AutoServiceDbContextFactory` supplies the design-time context, so the gate never builds the application host and needs no secrets; CI runs it on every push.
 
 ## Always-On for Code Changes
 

@@ -13,6 +13,10 @@ import axios from 'axios';
 import { appointmentService } from '../../../services/scheduler/appointment.service';
 import { PROFILE_PICTURE_UPDATED_EVENT } from '../../../services/profile/profile-picture-live.service';
 import {
+  APPOINTMENT_UPDATED_EVENT,
+  startAppointmentLiveUpdates,
+} from '../../../services/scheduler/appointment-live.service';
+import {
   PERSISTED_QUERY_CACHE_MAX_AGE_MS,
   SCHEDULER_BACKGROUND_REFRESH_INTERVAL_MS,
   SCHEDULER_MONTH_STALE_TIME_MS,
@@ -418,6 +422,22 @@ export function useSchedulerDataSync({
     globalThis.addEventListener(PROFILE_PICTURE_UPDATED_EVENT, handleProfilePictureUpdated);
     return () => {
       globalThis.removeEventListener(PROFILE_PICTURE_UPDATED_EVENT, handleProfilePictureUpdated);
+    };
+  }, []);
+
+  // Another user's appointment change arrives over SSE instead of waiting for the periodic
+  // background refresh. The stream is opened only while the scheduler is mounted.
+  useEffect(() => {
+    const handleAppointmentUpdated = () => {
+      void backgroundRefreshTaskRef.current();
+    };
+
+    const stopAppointmentLiveUpdates = startAppointmentLiveUpdates();
+    globalThis.addEventListener(APPOINTMENT_UPDATED_EVENT, handleAppointmentUpdated);
+
+    return () => {
+      globalThis.removeEventListener(APPOINTMENT_UPDATED_EVENT, handleAppointmentUpdated);
+      stopAppointmentLiveUpdates();
     };
   }, []);
 }

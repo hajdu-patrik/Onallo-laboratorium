@@ -1,3 +1,4 @@
+using AutoService.ApiService.Appointments.Realtime;
 using System.Security.Claims;
 using AutoService.ApiService.Data;
 using AutoService.ApiService.Domain.UniqueTypes;
@@ -25,6 +26,7 @@ public static partial class AppointmentEndpoints
         ClaimsPrincipal user,
         AutoServiceDbContext db,
         ILoggerFactory loggerFactory,
+        IAppointmentUpdateBroadcaster broadcaster,
         CancellationToken cancellationToken)
     {
         var logger = loggerFactory.CreateLogger("AppointmentEndpoints.UpdateStatus");
@@ -86,6 +88,8 @@ public static partial class AppointmentEndpoints
         await db.SaveChangesAsync(cancellationToken);
 
         logger.LogInformation("UpdateStatus succeeded for appointment {AppointmentId}; new status {Status}.", id, newStatus);
+
+        PublishAppointmentChanged(broadcaster, appointment.Id);
 
         return Results.Ok(ToDto(appointment));
     }

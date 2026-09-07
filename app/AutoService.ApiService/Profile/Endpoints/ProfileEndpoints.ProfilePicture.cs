@@ -1,29 +1,16 @@
 using AutoService.ApiService.Data;
 using AutoService.ApiService.Profile.Realtime;
+using AutoService.ApiService.Realtime;
 using AutoService.ApiService.Storage;
 using AutoService.ApiService.Domain;
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json;
-using System.Threading.Channels;
 
 namespace AutoService.ApiService.Profile.Endpoints;
 
 public static partial class ProfileEndpoints
 {
-    private static readonly TimeSpan ProfilePictureUpdatesIdleTimeout = TimeSpan.FromMinutes(10);
-    private static readonly TimeSpan ProfilePictureUpdatesKeepAliveInterval = TimeSpan.FromSeconds(20);
     private const int ProfilePictureCacheMaxAgeSeconds = 3600;
     private const string DefaultProfilePictureContentType = "image/webp";
-
-    /**
-     * Represents the possible outcomes when waiting for the next profile-picture SSE channel item.
-     */
-    private enum ProfilePictureUpdateReadState
-    {
-        Available,
-        Closed,
-        TimedOut
-    }
 
     /**
      * Handles {@code GET /api/profile/picture} to retrieve the current user's profile picture.
@@ -158,11 +145,16 @@ public static partial class ProfileEndpoints
                 statusCode: StatusCodes.Status503ServiceUnavailable);
         }
 
-        ConfigureProfilePictureUpdateStream(httpContext.Response);
+        ServerSentEventStream.ConfigureResponse(httpContext.Response);
 
         try
         {
-            await WriteProfilePictureUpdateStreamAsync(httpContext.Response, reader, cancellationToken);
+            await ServerSentEventStream.WriteAsync(
+                httpContext.Response,
+                reader,
+                "profile-picture-updated",
+                "profile picture updates stream ready",
+                cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -174,112 +166,6 @@ public static partial class ProfileEndpoints
         }
 
         return Results.Empty;
-    }
-
-    /**
-     * Configures SSE-specific response headers before the profile-picture update stream starts writing.
-     */
-    private static void ConfigureProfilePictureUpdateStream(HttpResponse response)
-    {
-        response.Headers.CacheControl = "no-cache";
-        response.Headers.Append("X-Accel-Buffering", "no");
-        response.ContentType = "text/event-stream";
-    }
-
-    /**
-     * Writes profile-picture SSE events until the channel closes, the client disconnects, or the idle timeout expires.
-     */
-    private static async Task WriteProfilePictureUpdateStreamAsync(
-        HttpResponse response,
-        ChannelReader<ProfilePictureUpdatedEvent> reader,
-        CancellationToken cancellationToken)
-    {
-        var idleDeadlineUtc = DateTime.UtcNow.Add(ProfilePictureUpdatesIdleTimeout);
-
-        await WriteProfilePictureStreamCommentAsync(
-            response,
-            "profile picture updates stream ready",
-            cancellationToken);
-
-        while (!cancellationToken.IsCancellationRequested)
-        {
-            var readState = await WaitForProfilePictureUpdateAsync(reader, cancellationToken);
-
-            if (readState == ProfilePictureUpdateReadState.Closed)
-            {
-                break;
-            }
-
-            if (readState == ProfilePictureUpdateReadState.TimedOut)
-            {
-                if (DateTime.UtcNow >= idleDeadlineUtc)
-                {
-                    break;
-                }
-
-                await WriteProfilePictureStreamCommentAsync(response, "keep-alive", cancellationToken);
-                continue;
-            }
-
-            idleDeadlineUtc = await WriteAvailableProfilePictureUpdatesAsync(
-                response,
-                reader,
-                idleDeadlineUtc,
-                cancellationToken);
-        }
-    }
-
-    /**
-     * Waits for the next SSE update while distinguishing channel closure from keep-alive timeouts.
-     */
-    private static async Task<ProfilePictureUpdateReadState> WaitForProfilePictureUpdateAsync(
-        ChannelReader<ProfilePictureUpdatedEvent> reader,
-        CancellationToken cancellationToken)
-    {
-        using var readCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        readCts.CancelAfter(ProfilePictureUpdatesKeepAliveInterval);
-
-        try
-        {
-            var hasData = await reader.WaitToReadAsync(readCts.Token);
-            return hasData ? ProfilePictureUpdateReadState.Available : ProfilePictureUpdateReadState.Closed;
-        }
-        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
-        {
-            return ProfilePictureUpdateReadState.TimedOut;
-        }
-    }
-
-    /**
-     * Drains queued profile-picture updates and extends the stream idle deadline after each delivered event.
-     */
-    private static async Task<DateTime> WriteAvailableProfilePictureUpdatesAsync(
-        HttpResponse response,
-        ChannelReader<ProfilePictureUpdatedEvent> reader,
-        DateTime idleDeadlineUtc,
-        CancellationToken cancellationToken)
-    {
-        while (reader.TryRead(out var update))
-        {
-            var payload = JsonSerializer.Serialize(update);
-            await response.WriteAsync($"event: profile-picture-updated\ndata: {payload}\n\n", cancellationToken);
-            await response.Body.FlushAsync(cancellationToken);
-            idleDeadlineUtc = DateTime.UtcNow.Add(ProfilePictureUpdatesIdleTimeout);
-        }
-
-        return idleDeadlineUtc;
-    }
-
-    /**
-     * Writes an SSE comment frame used for stream readiness and keep-alive messages.
-     */
-    private static async Task WriteProfilePictureStreamCommentAsync(
-        HttpResponse response,
-        string comment,
-        CancellationToken cancellationToken)
-    {
-        await response.WriteAsync($": {comment}\n\n", cancellationToken);
-        await response.Body.FlushAsync(cancellationToken);
     }
 
     /**

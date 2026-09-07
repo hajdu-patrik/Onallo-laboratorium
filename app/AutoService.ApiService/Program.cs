@@ -9,6 +9,7 @@ using AutoService.ApiService.Data;
 using AutoService.ApiService.DataInitialization;
 using AutoService.ApiService.Middleware;
 using AutoService.ApiService.Profile.Endpoints;
+using AutoService.ApiService.Appointments.Realtime;
 using AutoService.ApiService.Profile.Realtime;
 using AutoService.ApiService.Imaging;
 using AutoService.ApiService.Maintenance;
@@ -257,6 +258,7 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddSingleton<IJwtTokenIssuer>(_ => new JwtTokenIssuer(jwtSecret, jwtIssuer, jwtAudience));
 builder.Services.AddSingleton<ITokenDenylistService, TokenDenylistService>();
 builder.Services.AddSingleton<IProfilePictureUpdateBroadcaster, ProfilePictureUpdateBroadcaster>();
+builder.Services.AddSingleton<IAppointmentUpdateBroadcaster, AppointmentUpdateBroadcaster>();
 builder.Services.AddSingleton<IProfilePictureProcessor, ImageSharpProfilePictureProcessor>();
 builder.Services.AddProfilePictureObjectStorage(builder.Configuration);
 builder.Services.AddHostedService<AutoService.ApiService.Security.ExpiredTokenCleanupService>();

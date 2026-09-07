@@ -10,10 +10,21 @@ import type {
   UpdateStatusRequest,
 } from '../../types/scheduler/scheduler.types';
 
+/** Base API URL for constructing direct resource URLs. */
+const API_URL = import.meta.env.VITE_API_URL;
+
 /**
  * Appointment service object for all scheduler-related API operations.
  */
 export const appointmentService = {
+  /**
+   * Returns the SSE endpoint URL for real-time appointment update events.
+   * @returns Absolute URL to the appointment updates SSE stream.
+   */
+  getAppointmentUpdatesUrl(): string {
+    return `${API_URL}/api/appointments/updates`;
+  },
+
   /**
    * Looks up a customer by email via {@code GET /api/customers/by-email}.
    * @param email - The email address to search for.

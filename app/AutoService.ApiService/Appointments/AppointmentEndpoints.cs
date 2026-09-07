@@ -25,6 +25,12 @@ public static partial class AppointmentEndpoints
             .Produces<List<AppointmentDto>>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized);
 
+        group.MapGet("/updates", StreamAppointmentUpdatesAsync)
+            .Produces(StatusCodes.Status200OK, contentType: "text/event-stream")
+            .Produces(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status503ServiceUnavailable)
+            .ExcludeFromDescription();
+
         group.MapPost("/intake", CreateIntakeAsync)
             .Produces<AppointmentDto>(StatusCodes.Status201Created)
             .Produces(StatusCodes.Status401Unauthorized)

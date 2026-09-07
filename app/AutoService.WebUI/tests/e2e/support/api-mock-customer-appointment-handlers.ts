@@ -136,6 +136,17 @@ export async function tryHandleAppointmentRoute(
     return true;
   }
 
+  // The scheduler opens a live update stream while mounted. Answering it with a valid, empty
+  // event stream keeps the mock from returning 404 and the client from retrying against an error.
+  if (path === '/api/appointments/updates' && method === 'GET') {
+    await route.fulfill({
+      status: 200,
+      contentType: 'text/event-stream',
+      body: ': mock appointment updates stream ready\n\n',
+    });
+    return true;
+  }
+
   if (path === '/api/appointments/today' && method === 'GET') {
     await fulfillJson(route, []);
     return true;

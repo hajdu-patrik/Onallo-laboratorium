@@ -1,3 +1,4 @@
+using AutoService.ApiService.Appointments.Realtime;
 using AutoService.ApiService.Data;
 using AutoService.ApiService.Domain;
 using AutoService.ApiService.Domain.UniqueTypes;
@@ -23,6 +24,7 @@ public static partial class AppointmentEndpoints
         CreateCustomerAppointmentRequest request,
         AutoServiceDbContext db,
         ILoggerFactory loggerFactory,
+        IAppointmentUpdateBroadcaster broadcaster,
         CancellationToken cancellationToken)
     {
         var logger = loggerFactory.CreateLogger("AppointmentEndpoints.CreateForCustomer");
@@ -75,6 +77,8 @@ public static partial class AppointmentEndpoints
         await db.SaveChangesAsync(cancellationToken);
 
         logger.LogInformation("CreateForCustomer created appointment {AppointmentId} for customer {CustomerId}.", appointment.Id, customerId);
+
+        PublishAppointmentChanged(broadcaster, appointment.Id);
 
         return Results.Created($"/api/appointments/{appointment.Id}", ToDto(appointment));
     }
