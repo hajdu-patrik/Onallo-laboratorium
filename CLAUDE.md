@@ -14,9 +14,13 @@
 ## Model Selection (Auto)
 
 - Do not auto-select models that cost more than 3x baseline.
-- Forbidden for automatic selection: `claude-fable-5`, `claude-opus-5`.
+- Forbidden for automatic selection: `claude-fable-5-1`, `claude-fable-5`, `claude-opus-5`,
+  `claude-opus-4-8`, `claude-opus-4-7`, `claude-opus-4-6`.
 - Preferred pool: `claude-sonnet-5`, `claude-haiku-4-5` (or equivalent tier).
 - If top-tier is truly needed, ask user approval first.
+- Keep both lists current. When a new Claude model ships, place it in the preferred pool or in the
+  forbidden list under the same cost rule before using it here, and correct any model id that a
+  newer release has superseded.
 
 ## Mandatory Workflow
 
