@@ -192,8 +192,8 @@ Ezután a `tests/.artifacts/test-suite-summary.json` fájlt vizsgálja, és a me
 - Implementáció után kötelező a build validáció és dokumentáció-szinkron.
 - Kódváltozásnál kötelező security remediation (`npm audit fix` WebUI-n, sérülékeny csomagellenőrzés .NET oldalon).
 - Részletes policy fájlok:
-  - Gyökér: `CLAUDE.md`, `.github/copilot-instructions.md`
-  - Területi szabályok: `app/*/CLAUDE.md`, `.github/instructions/*.instructions.md`
+  - Gyökér: `CLAUDE.md`
+  - Területi szabályok: `app/*/CLAUDE.md`
 
 ## SQL csak olvasható policy MI validációhoz
 

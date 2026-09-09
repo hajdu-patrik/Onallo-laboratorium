@@ -11,8 +11,6 @@ tools: Read, Edit, Grep, Glob
 
 - Scope: `app/AutoService.WebUI/**`
 - This file is the Claude UI/UX source of truth for visual governance and style extraction rules.
-- Copilot counterpart: `.github/agents/ui-ux-style-profile.agent.md`.
-- Both files must stay semantically equivalent.
 - Default mode is preservation: do not change the current rendered appearance unless the user explicitly asks for a visual redesign.
 
 ## Operating Model

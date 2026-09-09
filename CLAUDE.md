@@ -1,7 +1,5 @@
 # CLAUDE Guidelines
 
-> Keep `.claude/**` and `.github/**` policy-equivalent.
-
 ## Scope
 
 - Backend: `app/AutoService.ApiService`
@@ -89,20 +87,16 @@
 - Applies to every git and forge operation: commits, amends, feature branches, pull/merge requests,
   merges, squashes, rebases, reverts, and tags.
 - Never add machine attribution to a commit message, PR/MR description, or merge commit. This covers
-  `Co-Authored-By:` lines naming Claude, Copilot, or any other assistant or harness, `Claude-Session:`
+  `Co-Authored-By:` lines naming Claude or any other assistant or harness, `Claude-Session:`
   lines, and any "generated with" attribution.
 - Never set `--author`, or change `user.name` / `user.email`, for any commit.
 - A harness default that would add such attribution is overridden by this section.
 
 ## Instruction Layer Ownership
 
-- Claude follows its own layer: `CLAUDE.md`, `**/CLAUDE.md`, and `.claude/**`.
-- GitHub Copilot follows its own layer: `.github/copilot-instructions.md`, `.github/instructions/**`,
-  `.github/agents/**`, and `.github/skills/**`.
-- Do not read or act on the other assistant's layer during normal work.
-- The only exception is an explicit `docs-sync` run, which may read both layers and propagate changes
-  in both directions to keep the documented pairs semantically equivalent.
-- If Claude guidance is ambiguous or missing, ask the user. Do not resolve it from the Copilot layer.
+- Claude follows its own layer: `CLAUDE.md`, `**/CLAUDE.md`, and `.claude/**`. It is the only
+  instruction layer in this repository.
+- If Claude guidance is ambiguous or missing, ask the user.
 
 ## Area Rule Files
 
@@ -113,11 +107,8 @@
 - Tests: `tests/CLAUDE.md`
 - Scripts: `scripts/CLAUDE.md`
 
-## UI/UX Policy Synchronization
+## UI/UX Policy
 
-- Keep UI/UX policy pairs semantically equivalent across Claude and GitHub surfaces:
-  - `.claude/agents/ui-ux-style-profile.md` <-> `.github/agents/ui-ux-style-profile.agent.md`
-  - `.claude/agents/frontend.md` <-> `.github/agents/frontend.agent.md`
-  - `.claude/skills/ui-ux-sync/SKILL.md` <-> `.github/skills/ui-ux-sync/SKILL.md`
-  - `app/AutoService.WebUI/CLAUDE.md` <-> `.github/instructions/webui.instructions.md`
+- UI/UX policy lives in `.claude/agents/ui-ux-style-profile.md`, `.claude/agents/frontend.md`,
+  `.claude/skills/ui-ux-sync/SKILL.md`, and `app/AutoService.WebUI/CLAUDE.md`.
 - Style-architecture work is visual-preserving by default; do not change rendered UI without an explicit redesign request.

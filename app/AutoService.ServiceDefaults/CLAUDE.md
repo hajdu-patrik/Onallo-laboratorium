@@ -24,4 +24,3 @@
 
 - Verify no feature-specific logic leaked in.
 - Verify startup compatibility remains intact.
-- Keep docs parity with `.github/instructions/servicedefaults.instructions.md`.

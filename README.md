@@ -194,8 +194,8 @@ Then inspect `tests/.artifacts/test-suite-summary.json` and act in the matching 
 - Build validation and docs sync are required after implementation.
 - Security remediation is mandatory for code changes (`npm audit fix` for WebUI, vulnerable package checks for .NET).
 - Detailed policy files:
-  - Root: `CLAUDE.md`, `.github/copilot-instructions.md`
-  - Area-specific rules: `app/*/CLAUDE.md`, `.github/instructions/*.instructions.md`
+  - Root: `CLAUDE.md`
+  - Area-specific rules: `app/*/CLAUDE.md`
 
 ## SQL Read-Only Policy for AI Validation
 

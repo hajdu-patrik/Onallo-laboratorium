@@ -14,7 +14,7 @@ Use this skill for UI-facing frontend changes and UI/UX policy documentation upd
 - 320px responsive verification request.
 - Style extraction, shared primitive, or visual-preservation review.
 - Any frontend UI/UX, responsiveness, interaction, or style-policy rule change that must keep `ui-ux-style-profile` in the agent pipeline.
-- UI/UX policy file change in `.github/**` or `.claude/**`.
+- UI/UX policy file change in `.claude/**`.
 
 ## Mandatory Checks
 

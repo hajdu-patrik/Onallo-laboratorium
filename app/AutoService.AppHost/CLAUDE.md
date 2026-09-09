@@ -36,4 +36,3 @@
 ## Validation
 
 - Build AppHost after changes.
-- Keep docs parity with `.github/instructions/apphost.instructions.md`.

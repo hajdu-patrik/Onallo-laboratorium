@@ -30,4 +30,3 @@
 
 - Validate script behavior from repository root when practical.
 - If script behavior changes setup or test workflow, update both `README.md` and `README(HU).md`.
-- Keep parity with `.github/instructions/scripts.instructions.md`.

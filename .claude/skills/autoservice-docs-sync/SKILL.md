@@ -1,6 +1,6 @@
 ---
 name: autoservice-docs-sync
-description: 'Synchronize ARSM CLAUDE/.github instruction pairs, agents, skills, MCP templates, README docs, and workflow policy. Use when repository behavior, setup, governance, routing gates, or documentation/customization files change.'
+description: 'Synchronize the ARSM Claude instruction files, agents, skills, MCP templates, README docs, and workflow policy. Use when repository behavior, setup, governance, routing gates, or documentation/customization files change.'
 disable-model-invocation: true
 ---
 
@@ -10,20 +10,18 @@ Use this skill after any change that can affect documented behavior.
 
 - Always run docs synchronization.
 - Auto-remediate drift; do not report-only.
-- Keep `.claude/**` and `.github/**` semantically equivalent.
 - Keep docs concise and evidence-based from current code/config.
 
-## Required Pair Mapping
+## Required Documentation Surface
 
-- Root policy: `CLAUDE.md` <-> `.github/copilot-instructions.md`.
-- Area rules: `app/{AutoService.ApiService,AutoService.WebUI,AutoService.AppHost,AutoService.ServiceDefaults}/CLAUDE.md` <-> `.github/instructions/{apiservice,webui,apphost,servicedefaults}.instructions.md`.
-- Tests: `tests/CLAUDE.md` <-> `.github/instructions/tests.instructions.md`.
-- Scripts: `scripts/CLAUDE.md` <-> `.github/instructions/scripts.instructions.md`.
+- Root policy: `CLAUDE.md`.
+- Area rules: `app/{AutoService.ApiService,AutoService.WebUI,AutoService.AppHost,AutoService.ServiceDefaults}/CLAUDE.md`.
+- Tests: `tests/CLAUDE.md`.
+- Scripts: `scripts/CLAUDE.md`.
 
-## Agent and Skill Parity
+## Agent and Skill Coverage
 
-- Keep all `.github/agents/*.agent.md` and `.claude/agents/*.md` policy-equivalent.
-- Keep all `.github/skills/*/SKILL.md` and `.claude/skills/*/SKILL.md` policy-equivalent.
+- Keep all `.claude/agents/*.md` and `.claude/skills/*/SKILL.md` consistent with `CLAUDE.md`.
 
 ## Output Contract
 
